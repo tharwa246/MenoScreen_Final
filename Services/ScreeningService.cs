@@ -4,6 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MenoScreen.Services;
 
+// SAVING A SCREENING
+// This class takes her answers, checks them, asks ScoringService for the score,
+// and saves the screening plus every answer to the database.
+// Both ways of screening use it: the clinician-led form and the patient's QR self-screen.
 public class ScreeningService
 {
     private readonly ApplicationDbContext _db;
@@ -15,7 +19,9 @@ public class ScreeningService
         _scoring = scoring;
     }
 
-    // Gets the questions of the active question-set version, in display order
+    // Gets the questions to show. Questions belong to a numbered "version" so the medical
+    // team can change the wording later without breaking old results. We use the newest
+    // version marked IsActive, sorted into the order the patient sees them.
     public async Task<List<Question>> GetActiveQuestionsAsync()
     {
         var version = await _db.QuestionSetVersions
@@ -30,6 +36,7 @@ public class ScreeningService
         return version.Questions.OrderBy(q => q.SortOrder).ToList();
     }
 
+    // Clinician-led screening (the clinician reads the questions aloud)
     // numericAnswers: QuestionId -> 0-3 (scored) or 0/1 (safety question)
     // textAnswers:    QuestionId -> text (the context questions)
     public async Task<Screening> SaveScreeningAsync(
@@ -38,9 +45,53 @@ public class ScreeningService
         IDictionary<int, int> numericAnswers,
         IDictionary<int, string> textAnswers)
     {
-        // 1. The patient must exist
-        if (!await _db.Patients.AnyAsync(p => p.Id == patientId))
-            throw new InvalidOperationException("Patient not found.");
+        var screening = await BuildScreeningAsync(patientId, clinicianId, numericAnswers, textAnswers, ScreeningSources.Clinician);
+
+        _db.Screenings.Add(screening);
+        await _db.SaveChangesAsync();   // saves the screening and all its answers together
+        return screening;
+    }
+
+    // Patient self-screening from a QR code.
+    // The important part: we save the screening AND mark the QR link as "used" in the
+    // same database save. If one fails, neither happens. So one QR link = one screening,
+    // and nobody can reuse a photographed QR code later.
+    public async Task<Screening> SaveSelfScreeningAsync(
+        ScreeningInvite invite,
+        IDictionary<int, int> numericAnswers,
+        IDictionary<int, string> textAnswers)
+    {
+        if (!invite.IsUsable(DateTime.UtcNow))
+            throw new InvalidOperationException("This screening link has expired or has already been used.");
+
+        var screening = await BuildScreeningAsync(invite.PatientId, invite.ClinicianId, numericAnswers, textAnswers, ScreeningSources.SelfScreen);
+
+        _db.Screenings.Add(screening);
+        invite.UsedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        // Link the invite to its screening. We can only do this now, because the database
+        // gives the screening its Id number during the save above.
+        invite.ScreeningId = screening.Id;
+        await _db.SaveChangesAsync();
+        return screening;
+    }
+
+    private async Task<Screening> BuildScreeningAsync(
+        int patientId,
+        string clinicianId,
+        IDictionary<int, int> numericAnswers,
+        IDictionary<int, string> textAnswers,
+        string source)
+    {
+        // 1. The patient must exist, and she must have agreed to her answers being recorded.
+        //    POPIA treats health information as "special personal information", which we may
+        //    only process with her consent. This check is the last line of defence: even if a
+        //    page forgot to check, no screening can be saved without consent.
+        var patient = await _db.Patients.FindAsync(patientId)
+            ?? throw new InvalidOperationException("Patient not found.");
+        if (!patient.ConsentGiven)
+            throw new InvalidOperationException("This patient's consent has not been recorded. Record consent on her patient record before screening.");
 
         // 2. Load the questions from the database
         var questions = await GetActiveQuestionsAsync();
@@ -49,6 +100,14 @@ public class ScreeningService
         var safety = questions.First(q => q.Type == QuestionType.SafetyFlag);
         if (!numericAnswers.TryGetValue(safety.Id, out var safetyValue) || safetyValue is < 0 or > 1)
             throw new InvalidOperationException("The safety question must be answered Yes or No.");
+
+        // 3b. Every patient context question (Q1-Q4) must be answered too, with one of its options
+        foreach (var q in questions.Where(q => q.Type == QuestionType.Context))
+        {
+            var options = (q.Options ?? "").Split('|', StringSplitOptions.RemoveEmptyEntries);
+            if (!textAnswers.TryGetValue(q.Id, out var text) || string.IsNullOrWhiteSpace(text) || !options.Contains(text))
+                throw new InvalidOperationException($"Question {q.Number} needs an answer.");
+        }
 
         // 4. Score it (this also checks every scored question has a 0-3 answer)
         var result = _scoring.Calculate(questions, numericAnswers);
@@ -62,7 +121,8 @@ public class ScreeningService
             RawScore = result.RawScore,
             MenoLikelihood = result.MenoLikelihood,
             ScoreBand = result.ScoreBand,
-            Band = result.Band
+            Band = result.Band,
+            Source = source
         };
 
         foreach (var q in questions)
@@ -78,8 +138,16 @@ public class ScreeningService
             }
         }
 
-        _db.Screenings.Add(screening);
-        await _db.SaveChangesAsync();   // saves the screening and all its answers together
         return screening;
     }
+
+    // Loads one screening together with her details and every answer + question.
+    // "Include" tells Entity Framework to fetch the linked rows in the same query,
+    // otherwise screening.Patient and answer.Question would be empty.
+    public Task<Screening?> LoadFullAsync(int id) =>
+        _db.Screenings
+            .Include(s => s.Patient)
+            .Include(s => s.Answers)
+                .ThenInclude(a => a.Question)
+            .FirstOrDefaultAsync(s => s.Id == id);
 }

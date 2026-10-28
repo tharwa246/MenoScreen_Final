@@ -1,24 +1,154 @@
-﻿@page "{id:int}"
+@page "{id:int}"
 @model MenoScreen.Pages.Screenings.ResultModel
+@using MenoScreen.Models
+@using MenoScreen.Pages.Shared
 @{
     ViewData["Title"] = "Screening result";
+    var s = Model.Screening;
+    var bandClass = s.Band.ToLower();
+    var blockTotals = Model.Blocks.ToDictionary(b => b.Block);
 }
 
-<h1>Result for @Model.Screening.Patient.FullName</h1>
-<p class="text-muted">Screened on @Model.Screening.ScreenedAt.ToString("yyyy-MM-dd HH:mm") (UTC)</p>
+<a class="back-link no-print" asp-page="/Patients/Details" asp-route-id="@s.PatientId">Back to @s.Patient.FullName</a>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <p class="mb-1">MenoLikelihood score</p>
-        <h2>@Model.Screening.MenoLikelihood / 100</h2>
-        <p class="mb-1">Raw score: @Model.Screening.RawScore / 54</p>
-        <p class="mb-1">Score band: <strong>@Model.Screening.ScoreBand</strong></p>
-        <p class="mb-0">Final band: <strong>@Model.Screening.Band</strong></p>
+<div class="page-head pt-3">
+    <div>
+        <h1>Result for @s.Patient.FullName</h1>
+        <p>
+            Screened @s.ScreenedAt.ToString("d MMM yyyy, HH:mm") (UTC),
+            @(s.Source == ScreeningSources.SelfScreen ? "by her own phone (QR self-screen)" : "with a clinician").
+        </p>
     </div>
 </div>
 
-<div class="alert alert-info">@Model.Message</div>
+<section class="result-hero mandi-gradient" style="--band-dot: var(--band-@bandClass)" aria-label="Result">
+    <div>
+        <div class="score-number">@s.MenoLikelihood<small> / 100</small></div>
+        <div class="score-label">MenoLikelihood score</div>
+    </div>
+    <div>
+        <span class="band band-@bandClass">@s.Band</span>
+        @if (s.Band != s.ScoreBand)
+        {
+            <span class="muted-on-gradient ms-2">Score alone: @s.ScoreBand</span>
+        }
+        <p class="message">@Model.Message</p>
+    </div>
+</section>
 
-<a asp-page-handler="ClinicianPdf" asp-route-id="@Model.Screening.Id" class="btn btn-outline-primary">Download clinician summary (PDF)</a>
-<a asp-page-handler="HandoutPdf" asp-route-id="@Model.Screening.Id" class="btn btn-outline-primary">Download patient handout (PDF)</a>
-<a asp-page="/Patients/Index" class="btn btn-primary">Back to patients</a>
+@if (s.Band == "Complex")
+{
+    <div class="safety-banner" role="alert">
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 1 21h22L12 2Zm1 15h-2v-2h2v2Zm0-4h-2V9h2v4Z"/></svg>
+        <div>
+            <strong>Safety flag: she has existing health conditions</strong>
+            She answered yes to question 23. Refer her to a specialist before any treatment conversation, whatever her score.
+        </div>
+    </div>
+}
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-8">
+        <section class="panel" aria-labelledby="blanket-title">
+            <h2 id="blanket-title">Her symptom blanket</h2>
+            <p class="text-secondary">Each patch is one answer. The darker the patch, the more that symptom is affecting her. Hover or tap a patch to see the question.</p>
+
+            <div class="blanket">
+                @foreach (var row in Model.PatchRows)
+                {
+                    var total = blockTotals[row.Key];
+                    <div class="blanket-row">
+                        <div class="block-name">@row.Key</div>
+                        <div class="patches" role="list">
+                            @foreach (var a in row)
+                            {
+                                var v = a.Value ?? 0;
+                                var label = $"Q{a.Question.Number}: {a.Question.Text} Answer: {v}, {QuestionFormModel.RatingLabels[v]}";
+                                <span class="patch sev-@v" role="listitem" title="@label" tabindex="0" aria-label="@label">@v</span>
+                            }
+                        </div>
+                        <div class="block-total">@total.Score / @total.Max</div>
+                    </div>
+                }
+            </div>
+
+            <div class="blanket-key" aria-hidden="true">
+                @for (int i = 0; i <= 3; i++)
+                {
+                    <span><span class="patch sev-@i"></span>@i @QuestionFormModel.RatingLabels[i]</span>
+                }
+            </div>
+
+            <p class="small text-secondary mt-3 mb-0">Raw score @s.RawScore of @(Model.Blocks.Sum(b => b.Max)), converted to @s.MenoLikelihood out of 100.</p>
+        </section>
+
+        <section class="panel" aria-labelledby="assistant-title">
+            <h2 id="assistant-title">Ask the clinician assistant</h2>
+            @if (!Model.AssistantAvailable)
+            {
+                <p class="text-secondary mb-0">The assistant isn't switched on for this clinic yet. An admin can turn it on by adding an API key (see SETUP.md).</p>
+            }
+            else
+            {
+                <p class="text-secondary">Answers come only from the clinic's approved guidelines and this result. It doesn't diagnose or prescribe, and it never sees her name.</p>
+
+                <form method="post" asp-page-handler="Ask" asp-route-id="@s.Id">
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        @foreach (var suggestion in MenoScreen.Pages.Screenings.ResultModel.SuggestedQuestions)
+                        {
+                            <button type="submit" name="AssistantQuestion" value="@suggestion" class="btn btn-sm btn-quiet">@suggestion</button>
+                        }
+                    </div>
+                    <label for="assistantQuestion" class="form-label">Or ask your own question</label>
+                    <div class="d-flex gap-2">
+                        <input id="assistantQuestion" name="CustomQuestion" class="form-control" maxlength="1000" autocomplete="off" />
+                        <button type="submit" class="btn btn-primary">Ask</button>
+                    </div>
+                </form>
+
+                @if (Model.AssistantReply != null)
+                {
+                    @if (Model.AssistantReply.Ok)
+                    {
+                        <div class="assistant-answer" aria-live="polite">
+                            <p class="fw-bold mb-1">@Model.AssistantQuestion</p>@Model.AssistantReply.Text
+                        </div>
+                        <p class="assistant-note">Generated from the clinic guidelines. Check it against your own clinical judgement.</p>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning mt-3" role="status">@Model.AssistantReply.Text</div>
+                    }
+                }
+            }
+        </section>
+    </div>
+
+    <div class="col-lg-4">
+        <section class="panel" aria-labelledby="next-title">
+            <h2 id="next-title">Next steps</h2>
+            <div class="d-grid gap-2 mt-3">
+                <a asp-page-handler="HandoutPdf" asp-route-id="@s.Id" class="btn btn-primary">Download her handout (PDF)</a>
+                <a asp-page-handler="ClinicianPdf" asp-route-id="@s.Id" class="btn btn-outline-primary">Download clinician summary (PDF)</a>
+                <button type="button" class="btn btn-quiet" onclick="window.print()">Print this page</button>
+            </div>
+        </section>
+
+        <section class="panel" aria-labelledby="context-title">
+            <h2 id="context-title">About her</h2>
+            @if (!Model.ContextAnswers.Any())
+            {
+                <p class="text-secondary mb-0">No context answers were given.</p>
+            }
+            else
+            {
+                <ul class="answer-list">
+                    @foreach (var a in Model.ContextAnswers)
+                    {
+                        <li><span>@a.Question.Text</span><span class="val">@a.TextValue</span></li>
+                    }
+                </ul>
+            }
+        </section>
+    </div>
+</div>

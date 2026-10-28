@@ -1,0 +1,51 @@
+@page "{token}"
+@model MenoScreen.Pages.SelfScreenModel
+@{
+    ViewData["Title"] = "Your screening";
+    ViewData["HideNav"] = true;
+    ViewData["BodyClass"] = "selfscreen";
+}
+
+@if (Model.PageState == MenoScreen.Pages.SelfScreenModel.State.Invalid)
+{
+    <section class="selfscreen-intro">
+        <h1>This link has already been used or has expired.</h1>
+        <p>Each screening link works once. Please ask your clinician for a new QR code.</p>
+        <a class="btn btn-cream" href="https://joinmandi.com">Visit JoinMandi.com</a>
+    </section>
+}
+else if (Model.PageState == MenoScreen.Pages.SelfScreenModel.State.Done)
+{
+    <section class="selfscreen-intro">
+        <h1>Thank you, @Model.FirstName.</h1>
+        <p>
+            Your answers have been sent to your clinician, who will go through them with you.
+            What you are feeling is real, and there is support.
+        </p>
+        <a class="btn btn-cream btn-lg" href="https://joinmandi.com">Learn more at JoinMandi.com</a>
+    </section>
+}
+else
+{
+    <section class="selfscreen-intro">
+        <p class="mandi-eyebrow">Talk to Mandi · Khuluma noMandi · Thetha noMandi · Praat met Mandi</p>
+        <h1>Thank you for arriving, @Model.FirstName. <span class="accent">Your health journey home starts here.</span></h1>
+        <p>
+            These 23 short questions are about how you have been feeling. They take about ten minutes.
+            There are no right or wrong answers. Your answers go only to your clinician.
+        </p>
+    </section>
+
+    @if (Model.ErrorMessage != null)
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <form method="post">
+        <partial name="_QuestionFields" model="@(new MenoScreen.Pages.Shared.QuestionFormModel { Questions = Model.Questions, Answers = Model.Answers, TextAnswers = Model.TextAnswers, SelfScreen = true })" />
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-cream btn-lg w-100">Send my answers</button>
+        </div>
+    </form>
+}

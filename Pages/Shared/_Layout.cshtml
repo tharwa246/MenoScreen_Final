@@ -1,46 +1,95 @@
-﻿<!DOCTYPE html>
+@{
+    var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+    string Active(string section) => currentPage.StartsWith(section, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    // The menu only shows links the signed-in user is allowed to open.
+    // (Hiding links is just for tidiness; the real protection is the policies in Program.cs.)
+    bool isAdmin = User.IsInRole("Admin");
+    bool isClinician = User.IsInRole("Clinician");
+    // Pages like the patient self-screen set ViewData["HideNav"] = true
+    bool hideNav = ViewData["HideNav"] as bool? ?? false;
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - MenoScreen</title>
+    <meta name="theme-color" content="#FDF7ED" />
+    <title>@ViewData["Title"] · MenoScreen by Mandi</title>
     <script type="importmap"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    @* JoinMandi fonts: Montserrat for text, a rounded display face for headings (set in site.css --font-display) *@
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Sour+Gummy:wght@600;700&display=swap" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/MenoScreen.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+<body class="@ViewData["BodyClass"]">
+    <a class="visually-hidden-focusable" href="#main">Skip to content</a>
+    <header class="site-header">
+        <nav class="navbar navbar-expand-md" aria-label="Main">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">MenoScreen</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <partial name="_LoginPartial" />
-                </div>
+                <a class="brand" asp-area="" asp-page="/Index">
+                    <span class="brand-mark">Mandi</span>
+                    <span class="brand-product">MenoScreen</span>
+                </a>
+                @if (!hideNav)
+                {
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                            aria-controls="mainNav" aria-expanded="false" aria-label="Open menu">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse justify-content-between" id="mainNav">
+                        <ul class="navbar-nav mx-md-auto">
+                            @if (User.Identity?.IsAuthenticated == true)
+                            {
+                                <li class="nav-item"><a class="nav-link @(currentPage == "/Index" ? "active" : "")" asp-area="" asp-page="/Index">Home</a></li>
+                            }
+                            @if (isClinician)
+                            {
+                                <li class="nav-item"><a class="nav-link @Active("/Patients")" asp-area="" asp-page="/Patients/Index">Patients</a></li>
+                            }
+                            @if (isClinician || isAdmin)
+                            {
+                                <li class="nav-item"><a class="nav-link @Active("/Analytics")" asp-area="" asp-page="/Analytics/Index">Analytics</a></li>
+                            }
+                            @if (isAdmin)
+                            {
+                                <li class="nav-item"><a class="nav-link @Active("/Questions")" asp-area="" asp-page="/Questions/Index">Questions</a></li>
+                                <li class="nav-item"><a class="nav-link @Active("/Admin")" asp-area="" asp-page="/Admin/AdminHome">Admin</a></li>
+                            }
+                        </ul>
+                        <div class="nav-account">
+                            @if (isClinician)
+                            {
+                                <a class="btn btn-primary nav-cta" asp-area="" asp-page="/Screenings/Start">Start a screening</a>
+                            }
+                            <partial name="_LoginPartial" />
+                        </div>
+                    </div>
+                }
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
+    <main id="main" role="main">
+        <div class="container pb-4">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="site-footer mandi-gradient">
         <div class="container">
-            &copy; 2026 - MenoScreen - <a asp-area="" asp-page="/Privacy">Privacy</a>
+            <div class="greetings" lang="en">
+                <span>Talk to Mandi</span>
+                <span lang="zu">Khuluma noMandi</span>
+                <span lang="xh">Thetha noMandi</span>
+                <span lang="af">Praat met Mandi</span>
+            </div>
+            <p class="fine">
+                MenoScreen is a screening aid for clinicians, not a diagnosis. A JoinMandi.com project by MrsKing Productions.
+                <a asp-area="" asp-page="/Privacy">Privacy and your information</a>
+            </p>
         </div>
     </footer>
 

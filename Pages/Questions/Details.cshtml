@@ -2,15 +2,17 @@
 @model MenoScreen.Pages_Questions.DetailsModel
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Question details";
 }
 
-<h1>Details</h1>
+<a class="back-link" asp-page="./Index">Back to questions</a>
 
-<div>
-    <h4>Question</h4>
-    <hr />
-    <dl class="row">
+<div class="page-head pt-3">
+    <div><h1>Question @Model.Question.Number</h1></div>
+</div>
+
+<div class="panel">
+    <dl class="row mb-0">
         <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.Question.QuestionSetVersion)
         </dt>
@@ -55,7 +57,6 @@
         </dd>
     </dl>
 </div>
-<div>
-    <a asp-page="./Edit" asp-route-id="@Model.Question.Id">Edit</a> |
-    <a asp-page="./Index">Back to List</a>
+<div class="form-actions">
+    <a asp-page="./Edit" asp-route-id="@Model.Question.Id" class="btn btn-primary">Edit question</a>
 </div>

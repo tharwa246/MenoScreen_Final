@@ -5,6 +5,7 @@ public class QuestionSetVersion
     public int VersionNumber {get;set;}
     public bool IsActive {get;set;}
     public string? Notes {get;set;}
-    public DateTime CreatedAt {get;set;}
+    // Default to "now" in UTC. Without this the date is unset, which Postgres rejects.
+    public DateTime CreatedAt {get;set;} = DateTime.UtcNow;
     public List<Question> Questions { get; set; } = new();
 }

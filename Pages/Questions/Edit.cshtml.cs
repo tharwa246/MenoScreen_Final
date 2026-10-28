@@ -36,7 +36,7 @@ namespace MenoScreen.Pages_Questions
                 return NotFound();
             }
             Question = question;
-           ViewData["QuestionSetVersionId"] = new SelectList(_context.QuestionSetVersions, "Id", "Id");
+           ViewData["QuestionSetVersionId"] = new SelectList(_context.QuestionSetVersions, "Id", "VersionNumber");
             return Page();
         }
 
@@ -44,8 +44,14 @@ namespace MenoScreen.Pages_Questions
         // For more information, see https://aka.ms/RazorPagesCRUD.
         public async Task<IActionResult> OnPostAsync()
         {
+            // The form posts QuestionSetVersionId, not the whole QuestionSetVersion object.
+            // Without this line the (non-nullable) navigation property always fails validation.
+            ModelState.Remove("Question.QuestionSetVersion");
+
             if (!ModelState.IsValid)
             {
+                // Refill the version dropdown, or the page crashes when it redisplays
+                ViewData["QuestionSetVersionId"] = new SelectList(_context.QuestionSetVersions, "Id", "VersionNumber");
                 return Page();
             }
 

@@ -1,38 +1,93 @@
-﻿@page
+@page
 @model MenoScreen.Pages.Patients.IndexModel
 @{
     ViewData["Title"] = "Patients";
 }
 
-<h1>Patients</h1>
+<div class="page-head">
+    <div>
+        <h1>Patients</h1>
+        <p>Find a patient to screen her, send her a QR self-screening, or see her history.</p>
+    </div>
+    <a asp-page="Create" class="btn btn-primary">Add patient</a>
+</div>
 
-<p><a asp-page="Create" class="btn btn-primary">Add patient</a></p>
+<form method="get" class="mb-3 d-flex gap-2 form-narrow" role="search">
+    <label for="search" class="visually-hidden">Search patients by name</label>
+    <input id="search" name="search" value="@Model.Search" class="form-control" placeholder="Search by name" />
+    <button type="submit" class="btn btn-quiet">Search</button>
+</form>
 
 @if (!Model.Patients.Any())
 {
-    <p>No patients yet. Add one to get started.</p>
+    <div class="empty-state">
+        @if (string.IsNullOrWhiteSpace(Model.Search))
+        {
+            <h2>No patients yet</h2>
+            <p>Add your first patient to start screening.</p>
+            <a asp-page="Create" class="btn btn-primary">Add patient</a>
+        }
+        else
+        {
+            <h2>No patient matches "@Model.Search"</h2>
+            <p>Check the spelling, or add her as a new patient.</p>
+            <a asp-page="Index" class="btn btn-quiet">Clear search</a>
+        }
+    </div>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Language</th>
-                <th>Added</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var p in Model.Patients)
-            {
+    <div class="table-panel">
+        <table class="table">
+            <thead>
                 <tr>
-                    <td>@p.FullName</td>
-                    <td>@p.PreferredLanguage</td>
-                    <td>@p.CreatedAt.ToString("yyyy-MM-dd")</td>
-                    <td><a asp-page="/Screenings/New" asp-route-patientId="@p.Id" class="btn btn-sm btn-primary">Screen</a></td>
+                    <th scope="col">Name</th>
+                    <th scope="col">Language</th>
+                    <th scope="col">Latest result</th>
+                    <th scope="col">Screenings</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Patients)
+                {
+                    <tr>
+                        <td>
+                            <a asp-page="Details" asp-route-id="@p.Id" class="fw-bold">@p.FullName</a>
+                            @if (!p.ConsentGiven)
+                            {
+                                <div><span class="tag tag-warn">Consent not recorded</span></div>
+                            }
+                        </td>
+                        <td>@MenoScreen.Pages.Patients.IndexModel.LanguageName(p.Language)</td>
+                        <td>
+                            @if (p.LastBand != null)
+                            {
+                                <a asp-page="/Screenings/Result" asp-route-id="@p.LastScreeningId" class="text-decoration-none">
+                                    <span class="band band-@p.LastBand.ToLower()">@p.LastBand</span>
+                                </a>
+                                <div class="small text-secondary">@p.LastScreenedAt?.ToString("d MMM yyyy")</div>
+                            }
+                            else
+                            {
+                                <span class="text-secondary">Not screened yet</span>
+                            }
+                        </td>
+                        <td>@p.ScreeningCount</td>
+                        <td class="text-end text-nowrap">
+                            @if (p.ConsentGiven)
+                            {
+                                <a asp-page="/Screenings/New" asp-route-patientId="@p.Id" class="btn btn-sm btn-primary">Screen now</a>
+                                <a asp-page="/Screenings/Invite" asp-route-patientId="@p.Id" class="btn btn-sm btn-quiet">QR self-screen</a>
+                            }
+                            else
+                            {
+                                <a asp-page="Details" asp-route-id="@p.Id" class="btn btn-sm btn-quiet">Record consent</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }

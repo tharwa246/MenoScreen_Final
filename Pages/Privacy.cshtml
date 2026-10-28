@@ -1,8 +1,31 @@
-﻿@page
+@page
 @model PrivacyModel
 @{
-    ViewData["Title"] = "Privacy Policy";
+    ViewData["Title"] = "Privacy and your information";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="page-head">
+    <div>
+        <h1>Privacy and your information</h1>
+        <p>How MenoScreen handles health information under South Africa's Protection of Personal Information Act (POPIA).</p>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>What we collect</h2>
+    <p>Her name, preferred language, her answers to the 23 screening questions, and the score and triage band worked out from them. We also record which clinician ran the screening and when.</p>
+
+    <h2 class="mt-4">Why</h2>
+    <p>Only to help her clinician recognise menopause symptoms and plan the next step in her care. Answers about symptoms are health information, which POPIA treats as special personal information, so we only screen a patient after her consent has been recorded.</p>
+
+    <h2 class="mt-4">Who can see it</h2>
+    <p>Signed-in clinicians at her clinic. Clinic admins see questions and anonymous totals. Every view and download of a result is written to an audit log.</p>
+
+    <h2 class="mt-4">What we never do</h2>
+    <p>We never sell or share her details. QR self-screening links contain only a random code, never her name or results, and work once. When the AI assistant is used, her name is never sent to it, only her scores and answers.</p>
+
+    <h2 class="mt-4">Her rights</h2>
+    <p>She can ask to see, correct or delete her information at any time by speaking to her clinician, or by writing to <a href="mailto:info@joinmandi.com">info@joinmandi.com</a>.</p>
+</div>
+
+<p class="mt-3 text-secondary">Prototype for UCT INF3003W. This notice is awaiting review by the project sponsor.</p>
