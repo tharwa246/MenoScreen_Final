@@ -1,0 +1,72 @@
+@page
+@model MenoScreen.Pages_Questions.IndexModel
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-page="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Question[0].QuestionSetVersion)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Question[0].Number)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Question[0].SortOrder)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Question[0].Block)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Question[0].Text)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Question[0].Type)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Question[0].Options)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model.Question) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.QuestionSetVersion.Id)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Number)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.SortOrder)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Block)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Text)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Type)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Options)
+            </td>
+            <td>
+                <a asp-page="./Edit" asp-route-id="@item.Id">Edit</a> |
+                <a asp-page="./Details" asp-route-id="@item.Id">Details</a> |
+                <a asp-page="./Delete" asp-route-id="@item.Id">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

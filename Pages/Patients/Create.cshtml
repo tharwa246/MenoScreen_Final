@@ -1,0 +1,35 @@
+﻿@page
+@model MenoScreen.Pages.Patients.CreateModel
+@{
+    ViewData["Title"] = "Add patient";
+}
+
+<h1>Add patient</h1>
+
+<form method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Input.FullName" class="form-label"></label>
+        <input asp-for="Input.FullName" class="form-control" />
+        <span asp-validation-for="Input.FullName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.PreferredLanguage" class="form-label"></label>
+        <select asp-for="Input.PreferredLanguage" class="form-select">
+            <option value="en">English</option>
+            <option value="zu">isiZulu</option>
+            <option value="xh">isiXhosa</option>
+            <option value="af">Afrikaans</option>
+        </select>
+        <span asp-validation-for="Input.PreferredLanguage" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-page="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

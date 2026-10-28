@@ -1,0 +1,38 @@
+﻿@page
+@model MenoScreen.Pages.Patients.IndexModel
+@{
+    ViewData["Title"] = "Patients";
+}
+
+<h1>Patients</h1>
+
+<p><a asp-page="Create" class="btn btn-primary">Add patient</a></p>
+
+@if (!Model.Patients.Any())
+{
+    <p>No patients yet. Add one to get started.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Language</th>
+                <th>Added</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model.Patients)
+            {
+                <tr>
+                    <td>@p.FullName</td>
+                    <td>@p.PreferredLanguage</td>
+                    <td>@p.CreatedAt.ToString("yyyy-MM-dd")</td>
+                    <td><a asp-page="/Screenings/New" asp-route-patientId="@p.Id" class="btn btn-sm btn-primary">Screen</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

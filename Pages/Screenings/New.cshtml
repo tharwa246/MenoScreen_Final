@@ -1,0 +1,80 @@
+﻿@page "{patientId:int}"
+@model MenoScreen.Pages.Screenings.NewModel
+@{
+    ViewData["Title"] = "New screening";
+    string[] labels = { "Not at all", "A little", "Quite a bit", "Extremely" };
+}
+
+<h1>Screening for @Model.Patient.FullName</h1>
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<form method="post">
+    @foreach (var block in Model.Questions.GroupBy(q => q.Block))
+    {
+        <h3 class="mt-4">@block.Key</h3>
+
+        @if (block.First().Type == MenoScreen.Models.QuestionType.Scored)
+        {
+            <p class="text-muted">
+                Say to the patient: "I'd like you to rate how much each symptom has been affecting you:
+                0 means not at all, 1 a little, 2 quite a bit, and 3 extremely."
+            </p>
+        }
+
+        @foreach (var q in block)
+        {
+            <div class="mb-3">
+                <label class="form-label fw-bold">@q.Number. @q.Text</label>
+
+                @if (q.Type == MenoScreen.Models.QuestionType.Context)
+                {
+                    <select name="TextAnswers[@q.Id]" class="form-select">
+                        <option value="">Select...</option>
+                        @foreach (var option in (q.Options ?? "").Split('|'))
+                        {
+                            <option value="@option" selected="@(Model.TextAnswers.GetValueOrDefault(q.Id) == option)">@option</option>
+                        }
+                    </select>
+                }
+                else if (q.Type == MenoScreen.Models.QuestionType.Scored)
+                {
+                    <div>
+                        @for (int i = 0; i <= 3; i++)
+                        {
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="q@(q.Id)_@i"
+                                       name="Answers[@q.Id]" value="@i"
+                                       checked="@(Model.Answers.TryGetValue(q.Id, out var picked) && picked == i)" />
+                                <label class="form-check-label" for="q@(q.Id)_@i">@i (@labels[i])</label>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" id="q@(q.Id)_yes"
+                                   name="Answers[@q.Id]" value="1"
+                                   checked="@(Model.Answers.TryGetValue(q.Id, out var s1) && s1 == 1)" />
+                            <label class="form-check-label" for="q@(q.Id)_yes">Yes</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" id="q@(q.Id)_no"
+                                   name="Answers[@q.Id]" value="0"
+                                   checked="@(Model.Answers.TryGetValue(q.Id, out var s0) && s0 == 0)" />
+                            <label class="form-check-label" for="q@(q.Id)_no">No</label>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+
+    <button type="submit" class="btn btn-primary btn-lg mt-3">Submit screening</button>
+    <a asp-page="/Patients/Index" class="btn btn-secondary btn-lg mt-3">Cancel</a>
+</form>
