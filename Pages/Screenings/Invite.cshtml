@@ -1,0 +1,42 @@
+@page "{patientId:int}"
+@model MenoScreen.Pages.Screenings.InviteModel
+@{
+    ViewData["Title"] = "QR self-screening";
+}
+
+<a class="back-link" asp-page="/Patients/Details" asp-route-id="@Model.Patient.Id">Back to @Model.Patient.FullName</a>
+
+<div class="page-head pt-3">
+    <div>
+        <h1>QR self-screening for @Model.Patient.FullName</h1>
+        <p>She scans the code with her phone camera and answers the 23 questions herself, for example in the waiting room. Her result appears in her history when she's done.</p>
+    </div>
+</div>
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+@if (Model.QrImage == null)
+{
+    <form method="post" class="panel form-narrow">
+        <p>The code works once, for 24 hours. It contains a random code only: never her name or her answers.</p>
+        <button type="submit" class="btn btn-primary">Create QR code</button>
+    </form>
+}
+else
+{
+    <section class="panel qr-card">
+        <img src="@Model.QrImage" alt="QR code that opens her screening" />
+        <div>
+            <h2>Ask her to scan this code</h2>
+            <p>It works once, until @Model.ExpiresAt?.ToLocalTime().ToString("d MMM yyyy, HH:mm").</p>
+            <p class="copy-link">Or share this link with her: <a href="@Model.Link">@Model.Link</a></p>
+            <div class="form-actions mt-3">
+                <a asp-page="/Patients/Details" asp-route-id="@Model.Patient.Id" class="btn btn-primary">Done</a>
+                <button type="button" class="btn btn-quiet" onclick="window.print()">Print the code</button>
+            </div>
+        </div>
+    </section>
+}

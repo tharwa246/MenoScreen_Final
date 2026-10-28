@@ -1,0 +1,95 @@
+@page
+@model MenoScreen.Pages.Analytics.IndexModel
+@{
+    ViewData["Title"] = "Analytics";
+    var m = Model.Summary;
+    int weekMax = Math.Max(1, m.Weekly.Count == 0 ? 1 : m.Weekly.Max(w => w.Count));
+}
+
+<div class="page-head">
+    <div>
+        <h1>Clinic analytics</h1>
+        <p>Totals across every screening. No patient names appear on this page.</p>
+    </div>
+</div>
+
+@if (m.TotalScreenings == 0)
+{
+    <div class="empty-state">
+        <h2>No screenings yet</h2>
+        <p>Figures appear here once the first patient has been screened.</p>
+        @if (User.IsInRole("Clinician"))
+        {
+            <a asp-page="/Patients/Index" class="btn btn-primary">Screen a patient</a>
+        }
+    </div>
+}
+else
+{
+    <div class="stat-row">
+        <div class="stat"><div class="value">@m.TotalScreenings</div><div class="label">Screenings</div></div>
+        <div class="stat"><div class="value">@m.ScreeningsLast30Days</div><div class="label">In the last 30 days</div></div>
+        <div class="stat"><div class="value">@m.AverageMenoLikelihood</div><div class="label">Average MenoLikelihood</div></div>
+        <div class="stat"><div class="value">@m.ComplexCount</div><div class="label">Safety flags (Complex)</div></div>
+        <div class="stat"><div class="value">@m.SelfScreenCount</div><div class="label">Done by QR self-screen</div></div>
+        <div class="stat"><div class="value">@m.TotalPatients</div><div class="label">Patients</div></div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-6">
+            <section class="panel h-100" aria-labelledby="bands-title">
+                <h2 id="bands-title">Triage bands</h2>
+                <p class="text-secondary">Final band of every screening.</p>
+                @foreach (var b in m.Bands)
+                {
+                    <div class="hbar">
+                        <span>@b.Band</span>
+                        <div class="track" role="img" aria-label="@b.Band: @b.Count screenings, @b.Percent percent">
+                            <div class="fill" style="width: @b.Percent%; background: var(--band-@b.Band.ToLower())"></div>
+                        </div>
+                        <span class="num">@b.Count (@b.Percent%)</span>
+                    </div>
+                }
+            </section>
+        </div>
+
+        <div class="col-lg-6">
+            <section class="panel h-100" aria-labelledby="blocks-title">
+                <h2 id="blocks-title">Where symptoms are heaviest</h2>
+                <p class="text-secondary">Average severity per symptom block, as a percentage of the maximum.</p>
+                @foreach (var b in m.BlockAverages.OrderByDescending(b => b.AveragePercent))
+                {
+                    <div class="hbar">
+                        <span>@b.Block</span>
+                        <div class="track" role="img" aria-label="@b.Block: average @b.AveragePercent percent">
+                            <div class="fill" style="width: @b.AveragePercent%"></div>
+                        </div>
+                        <span class="num">@b.AveragePercent%</span>
+                    </div>
+                }
+            </section>
+        </div>
+
+        <div class="col-12">
+            <section class="panel" aria-labelledby="weekly-title">
+                <h2 id="weekly-title">Screenings per week</h2>
+                <p class="text-secondary">The last @m.Weekly.Count weeks, starting Mondays.</p>
+                <div class="weekly" role="img" aria-label="Screenings per week: @(string.Join(", ", m.Weekly.Select(w => $"{w.WeekStart:d MMM} {w.Count}")))">
+                    @foreach (var w in m.Weekly)
+                    {
+                        <div class="wk">
+                            <span class="count">@(w.Count > 0 ? w.Count.ToString() : "")</span>
+                            <div class="bar" style="height: @(w.Count * 100 / weekMax)%"></div>
+                        </div>
+                    }
+                </div>
+                <div class="weekly-labels" aria-hidden="true">
+                    @foreach (var w in m.Weekly)
+                    {
+                        <span>@w.WeekStart.ToString("d MMM")</span>
+                    }
+                </div>
+            </section>
+        </div>
+    </div>
+}

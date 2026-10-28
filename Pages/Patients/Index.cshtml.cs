@@ -1,5 +1,5 @@
 using MenoScreen.Data;
-using MenoScreen.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,10 +14,44 @@ public class IndexModel : PageModel
         _db = db;
     }
 
-    public List<Patient> Patients { get; set; } = new();
+    public record PatientRow(int Id, string FullName, string Language, DateTime CreatedAt, bool ConsentGiven,
+                             int ScreeningCount, string? LastBand, DateTime? LastScreenedAt, int? LastScreeningId);
+
+    public List<PatientRow> Patients { get; set; } = new();
+
+    [BindProperty(SupportsGet = true)]
+    public string? Search { get; set; }
 
     public async Task OnGetAsync()
     {
-        Patients = await _db.Patients.OrderBy(p => p.FullName).ToListAsync();
+        var query = _db.Patients.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            var term = Search.Trim().ToLower();
+            query = query.Where(p => p.FullName.ToLower().Contains(term));
+        }
+
+        Patients = await query
+            .OrderBy(p => p.FullName)
+            .Select(p => new PatientRow(
+                p.Id,
+                p.FullName,
+                p.PreferredLanguage,
+                p.CreatedAt,
+                p.ConsentGiven,
+                p.Screenings.Count,
+                p.Screenings.OrderByDescending(s => s.ScreenedAt).Select(s => s.Band).FirstOrDefault(),
+                p.Screenings.OrderByDescending(s => s.ScreenedAt).Select(s => (DateTime?)s.ScreenedAt).FirstOrDefault(),
+                p.Screenings.OrderByDescending(s => s.ScreenedAt).Select(s => (int?)s.Id).FirstOrDefault()))
+            .ToListAsync();
     }
+
+    public static string LanguageName(string code) => code switch
+    {
+        "zu" => "isiZulu",
+        "xh" => "isiXhosa",
+        "af" => "Afrikaans",
+        _ => "English"
+    };
 }

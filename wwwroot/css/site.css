@@ -1,31 +1,631 @@
-html {
-  font-size: 14px;
+/* ==========================================================================
+   MenoScreen by Mandi
+   Brand layer on top of Bootstrap 5, matched to JoinMandi.com.
+   Every colour and font lives in :root below; change them here only.
+   ========================================================================== */
+
+:root {
+  /* JoinMandi palette (sampled from joinmandi.com) */
+  --mandi-cream: #FDF7ED;          /* page + header background */
+  --mandi-cream-light: #FFFCF6;    /* cards */
+  --mandi-sand: #F6E8D3;           /* quiet panels, tracks */
+  --mandi-line: #EDDCC6;
+  --mandi-orange: #E08D1F;         /* logo */
+  --mandi-sun: #F2C14E;            /* yellow accent: headline, language pill */
+  --mandi-terracotta: #C94A2B;     /* primary button ("Book a consult") */
+  --mandi-terracotta-dark: #A83B20;
+  --mandi-brown: #3B2A22;          /* headings on cream */
+  --mandi-text: #4A3A32;           /* body text */
+  --mandi-muted: #7A685D;          /* nav + secondary text */
+  --mandi-ink-on-sun: #452A15;     /* text on yellow */
+
+  /* The JoinMandi hero gradient: amber to orange to coral to rose */
+  --mandi-gradient:
+    radial-gradient(ellipse at 50% 120%, rgba(201, 74, 43, .35), transparent 60%),
+    linear-gradient(105deg, #DEA539 0%, #DC8248 35%, #D76A5F 65%, #D36475 100%);
+
+  /* Triage bands: fill + readable text colour */
+  --band-unlikely: #5E8C6A;      --band-unlikely-ink: #FFFFFF;
+  --band-possible: #F2C14E;      --band-possible-ink: #452A15;
+  --band-likely: #DC8248;        --band-likely-ink: #3A1D0C;
+  --band-significant: #C94A2B;   --band-significant-ink: #FFFFFF;
+  --band-complex: #7B4A8C;       --band-complex-ink: #FFFFFF;
+
+  /* Blanket patches: symptom severity 0-3, in JoinMandi's warm colours - taken from website */
+  --sev-0: #F7E9D6;
+  --sev-1: #F2C14E;
+  --sev-2: #DC8248;
+  --sev-3: #C94A2B;
+
+  --radius-sm: 8px;
+  --radius: 16px;
+
+  /* Fonts. -font-display is the rounded headline face on joinmandi.com */
+  --font-display: "Sour Gummy", "Baloo 2", "Trebuchet MS", sans-serif;
+  --font-body: "Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Bootstrap hooks */
+  --bs-body-font-family: var(--font-body);
+  --bs-body-color: var(--mandi-text);
+  --bs-body-bg: var(--mandi-cream);
+  --bs-link-color: var(--mandi-terracotta);
+  --bs-link-color-rgb: 201, 74, 43;
+  --bs-link-hover-color: var(--mandi-terracotta-dark);
+  --bs-link-hover-color-rgb: 168, 59, 32;
+  --bs-border-color: var(--mandi-line);
+  --bs-secondary-color: var(--mandi-muted);
+  --bs-primary: var(--mandi-terracotta);
+  --bs-primary-rgb: 201, 74, 43;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
+/* ---------- Base ---------- */
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
+html { font-size: 15px; }
+@media (min-width: 768px) { html { font-size: 16px; } }
 
 body {
-  margin-bottom: 60px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--mandi-cream);
+  color: var(--mandi-text);
+  line-height: 1.6;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+main { flex: 1 0 auto; }
+
+h1, h2, h3, .display-font {
+  font-family: var(--font-display);
+  color: var(--mandi-brown);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+h1 { font-size: 2.3rem; line-height: 1.1; margin-bottom: .35rem; }
+h2 { font-size: 1.55rem; line-height: 1.2; }
+h3 { font-size: 1.25rem; line-height: 1.25; }
+@media (min-width: 768px) { h1 { font-size: 2.8rem; } }
+
+p { max-width: 70ch; }
+.lead-quiet { color: var(--mandi-muted); font-size: 1.08rem; max-width: 60ch; }
+
+/* The small letter-spaced line above JoinMandi's headline */
+.mandi-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: .78rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  opacity: .85;
+  margin-bottom: 1rem;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+:focus-visible {
+  outline: 3px solid var(--mandi-terracotta);
+  outline-offset: 2px;
 }
+.btn:focus-visible, .form-control:focus, .form-select:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 .2rem rgba(242, 193, 78, .55);
+  border-color: var(--mandi-orange);
+}
+
+/* ---------- Header / nav (cream bar, like joinmandi.com) ---------- */
+
+.site-header {
+  background: var(--mandi-cream);
+  border-bottom: 1px solid var(--mandi-line);
+}
+
+/* Spread the bar out: logo left, links centred, account + main action right */
+.site-header .navbar { padding-block: 1.1rem; }
+.main-nav { gap: .25rem; }
+@media (min-width: 768px) { .main-nav { gap: 1rem; } }
+.nav-account { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; }
+.nav-user-area { gap: .75rem; }
+.nav-cta { white-space: nowrap; }
+@media (max-width: 767px) {
+  .nav-account { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--mandi-line); }
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: .55rem;
+  text-decoration: none;
+}
+.brand-mark {
+  font-family: var(--font-display);
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: var(--mandi-orange);
+  line-height: 1;
+}
+.brand-product {
+  font-size: .95rem;
+  color: var(--mandi-muted);
+  font-weight: 600;
+}
+
+.site-header .nav-link {
+  color: var(--mandi-muted);
+  font-weight: 500;
+  padding-inline: .9rem !important;
+  border-radius: 999px;
+}
+.site-header .nav-link:hover { color: var(--mandi-terracotta); }
+/* Active page = the yellow pill, like the site's language switch */
+.site-header .nav-link.active {
+  color: var(--mandi-ink-on-sun);
+  background: var(--mandi-sun);
+  font-weight: 700;
+}
+.site-header .btn-link.nav-link { text-decoration: none; }
+.nav-user { font-weight: 400 !important; }
+
+/* ---------- Gradient sections (hero, result, footer) ---------- */
+
+.mandi-gradient {
+  background: var(--mandi-gradient);
+  color: var(--mandi-cream);
+}
+.mandi-gradient h1, .mandi-gradient h2 { color: var(--mandi-cream); }
+.mandi-gradient .accent { color: var(--mandi-sun); }
+.mandi-gradient a:not(.btn) { color: var(--mandi-cream); }
+
+/* ---------- Footer ---------- */
+
+.site-footer {
+  margin-top: 4rem;
+  padding: 2.2rem 0 1.8rem;
+  font-size: .92rem;
+}
+.site-footer .greetings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem 1.6rem;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  color: var(--mandi-cream);
+  margin-bottom: .8rem;
+}
+.site-footer .fine { color: var(--mandi-cream); opacity: .9; max-width: none; margin: 0; }
+.site-footer a { color: var(--mandi-cream); font-weight: 600; }
+
+/* ---------- Buttons (pills, like joinmandi.com) ---------- */
+
+.btn { font-weight: 700; border-radius: 999px; padding: .55rem 1.3rem; }
+.btn-sm { padding: .32rem .9rem; }
+.btn-lg { padding: .75rem 1.7rem; }
+
+.btn-primary {
+  --bs-btn-color: var(--mandi-cream);
+  --bs-btn-bg: var(--mandi-terracotta);
+  --bs-btn-border-color: var(--mandi-terracotta);
+  --bs-btn-hover-color: var(--mandi-cream);
+  --bs-btn-hover-bg: var(--mandi-terracotta-dark);
+  --bs-btn-hover-border-color: var(--mandi-terracotta-dark);
+  --bs-btn-active-color: var(--mandi-cream);
+  --bs-btn-active-bg: var(--mandi-terracotta-dark);
+  --bs-btn-active-border-color: var(--mandi-terracotta-dark);
+  --bs-btn-disabled-bg: var(--mandi-terracotta);
+  --bs-btn-disabled-border-color: var(--mandi-terracotta);
+}
+.btn-outline-primary {
+  --bs-btn-color: var(--mandi-terracotta);
+  --bs-btn-border-color: var(--mandi-terracotta);
+  --bs-btn-hover-bg: var(--mandi-terracotta);
+  --bs-btn-hover-border-color: var(--mandi-terracotta);
+  --bs-btn-hover-color: var(--mandi-cream);
+  --bs-btn-active-bg: var(--mandi-terracotta-dark);
+  --bs-btn-active-border-color: var(--mandi-terracotta-dark);
+}
+.btn-secondary, .btn-quiet {
+  --bs-btn-color: var(--mandi-brown);
+  --bs-btn-bg: var(--mandi-cream-light);
+  --bs-btn-border-color: var(--mandi-line);
+  --bs-btn-hover-color: var(--mandi-brown);
+  --bs-btn-hover-bg: var(--mandi-sand);
+  --bs-btn-hover-border-color: var(--mandi-line);
+  --bs-btn-active-bg: var(--mandi-sand);
+  --bs-btn-active-color: var(--mandi-brown);
+}
+/* Yellow pill, like the site's "EN" language switch */
+.btn-sun {
+  --bs-btn-color: var(--mandi-ink-on-sun);
+  --bs-btn-bg: var(--mandi-sun);
+  --bs-btn-border-color: var(--mandi-sun);
+  --bs-btn-hover-color: var(--mandi-ink-on-sun);
+  --bs-btn-hover-bg: #E9B43A;
+  --bs-btn-hover-border-color: #E9B43A;
+  --bs-btn-active-bg: #E9B43A;
+  --bs-btn-active-color: var(--mandi-ink-on-sun);
+}
+/* On the gradient: cream solid and cream-outline pills, like the hero buttons */
+.btn-cream {
+  --bs-btn-color: var(--mandi-terracotta);
+  --bs-btn-bg: var(--mandi-cream);
+  --bs-btn-border-color: var(--mandi-cream);
+  --bs-btn-hover-color: var(--mandi-terracotta-dark);
+  --bs-btn-hover-bg: #FFFFFF;
+  --bs-btn-hover-border-color: #FFFFFF;
+  --bs-btn-active-bg: #FFFFFF;
+  --bs-btn-active-color: var(--mandi-terracotta-dark);
+}
+.btn-cream-outline {
+  --bs-btn-color: var(--mandi-cream);
+  --bs-btn-bg: rgba(255, 255, 255, .08);
+  --bs-btn-border-color: rgba(253, 246, 236, .55);
+  --bs-btn-hover-color: var(--mandi-terracotta);
+  --bs-btn-hover-bg: var(--mandi-cream);
+  --bs-btn-hover-border-color: var(--mandi-cream);
+  --bs-btn-active-bg: var(--mandi-cream);
+  --bs-btn-active-color: var(--mandi-terracotta);
+}
+
+/* ---------- Page header ---------- */
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 2.2rem 0 1.4rem;
+}
+.page-head p { margin: 0; color: var(--mandi-muted); }
+.back-link { display: inline-block; margin-top: 1.6rem; font-weight: 600; text-decoration: none; }
+
+/* ---------- Panels, tables, forms ---------- */
+
+.panel {
+  background: var(--mandi-cream-light);
+  border: 1px solid var(--mandi-line);
+  border-radius: var(--radius);
+  padding: 1.4rem 1.5rem;
+}
+.panel + .panel { margin-top: 1.25rem; }
+.panel-quiet { background: var(--mandi-sand); border-color: transparent; }
+
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-striped-bg: transparent;
+  --bs-table-color: var(--mandi-text);
+  margin: 0;
+}
+.table > thead th {
+  color: var(--mandi-muted);
+  font-weight: 600;
+  font-size: .88rem;
+  border-bottom: 2px solid var(--mandi-line);
+}
+.table > tbody td { vertical-align: middle; padding-block: .8rem; }
+.table-panel {
+  background: var(--mandi-cream-light);
+  border: 1px solid var(--mandi-line);
+  border-radius: var(--radius);
+  padding: .4rem 1.1rem;
+  overflow-x: auto;
+}
+
+.form-label { font-weight: 600; color: var(--mandi-brown); }
+.form-control, .form-select {
+  border-radius: var(--radius-sm);
+  border-color: #E2CDB4;
+  background-color: #FFFFFF;
+  padding: .6rem .85rem;
+}
+.form-text { color: var(--mandi-muted); }
+.form-narrow { max-width: 36rem; }
+
+.form-check-input:checked { background-color: var(--mandi-terracotta); border-color: var(--mandi-terracotta); }
+
+.alert-info {
+  --bs-alert-bg: #FCEFD2;
+  --bs-alert-border-color: #F2D592;
+  --bs-alert-color: var(--mandi-ink-on-sun);
+}
+
+.empty-state {
+  text-align: left;
+  padding: 2.4rem 1.6rem;
+  border: 2px dashed var(--mandi-line);
+  border-radius: var(--radius);
+  background: var(--mandi-cream-light);
+}
+
+/* ---------- Band badges ---------- */
+
+.band {
+  display: inline-block;
+  padding: .22rem .8rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: .86rem;
+  white-space: nowrap;
+  background: var(--mandi-muted);
+  color: #fff;
+}
+.band-unlikely    { background: var(--band-unlikely);    color: var(--band-unlikely-ink); }
+.band-possible    { background: var(--band-possible);    color: var(--band-possible-ink); }
+.band-likely      { background: var(--band-likely);      color: var(--band-likely-ink); }
+.band-significant { background: var(--band-significant); color: var(--band-significant-ink); }
+.band-complex     { background: var(--band-complex);     color: var(--band-complex-ink); }
+/* On the gradient every band sits on a cream pill so it stays readable */
+.mandi-gradient .band { background: var(--mandi-cream); color: var(--mandi-brown); }
+.mandi-gradient .band::before {
+  content: "";
+  display: inline-block;
+  width: .6rem; height: .6rem;
+  border-radius: 50%;
+  margin-right: .45rem;
+  background: var(--band-dot, var(--mandi-muted));
+}
+
+.tag {
+  display: inline-block;
+  padding: .1rem .6rem;
+  border-radius: 999px;
+  background: var(--mandi-sand);
+  color: var(--mandi-brown);
+  font-size: .82rem;
+  font-weight: 600;
+}
+.tag-warn { background: #FCE3D9; color: #8A2E17; }
+
+/* ---------- Result page ---------- */
+
+.result-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  border-radius: var(--radius);
+  padding: 1.8rem 1.9rem;
+}
+@media (min-width: 768px) { .result-hero { grid-template-columns: auto 1fr; align-items: center; } }
+
+.score-number {
+  font-family: var(--font-display);
+  font-size: 5rem;
+  line-height: .9;
+  font-weight: 700;
+  color: var(--mandi-cream);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 12px rgba(120, 40, 20, .18);
+}
+.score-number small { font-size: 1.4rem; color: var(--mandi-cream); font-weight: 600; }
+.result-hero .score-label { color: var(--mandi-cream); opacity: .9; font-size: .9rem; margin-top: .3rem; }
+.result-hero .message { font-size: 1.08rem; margin: .7rem 0 0; color: var(--mandi-cream); }
+.result-hero .muted-on-gradient { color: var(--mandi-cream); opacity: .85; font-size: .88rem; }
+
+.safety-banner {
+  display: flex;
+  gap: .9rem;
+  align-items: flex-start;
+  background: #F1E7F4;
+  border: 1px solid #D8C3E0;
+  color: #3F2449;
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  margin-top: 1.25rem;
+}
+.safety-banner strong { display: block; }
+
+/* The Mandi blanket: one patch per scored answer, rows = symptom blocks */
+.blanket { display: grid; gap: 1rem; }
+.blanket-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "name total" "patches patches";
+  gap: .4rem;
+}
+.blanket-row .block-name { grid-area: name; font-weight: 700; color: var(--mandi-brown); }
+.blanket-row .patches { grid-area: patches; }
+.blanket-row .block-total { grid-area: total; font-variant-numeric: tabular-nums; color: var(--mandi-muted); text-align: right; }
+@media (min-width: 768px) {
+  .blanket-row { grid-template-columns: 15rem 1fr 5rem; grid-template-areas: "name patches total"; align-items: center; gap: 1rem; }
+}
+.patches { display: flex; flex-wrap: wrap; gap: 4px; }
+.patch {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 6px;
+  background: var(--sev-0);
+  border: 1.5px dashed rgba(59, 42, 34, .28); /* the stitching */
+  display: grid;
+  place-items: center;
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--mandi-brown);
+}
+.patch.sev-1 { background: var(--sev-1); color: var(--mandi-ink-on-sun); }
+.patch.sev-2 { background: var(--sev-2); color: #3A1D0C; }
+.patch.sev-3 { background: var(--sev-3); color: #FFFFFF; }
+
+.blanket-key { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .86rem; color: var(--mandi-muted); margin-top: 1.1rem; }
+.blanket-key span { display: inline-flex; align-items: center; gap: .4rem; }
+.blanket-key .patch { width: 1rem; height: 1rem; font-size: 0; }
+
+.answer-list { list-style: none; padding: 0; margin: 0; }
+.answer-list li { display: flex; justify-content: space-between; gap: 1rem; padding: .55rem 0; border-bottom: 1px solid var(--mandi-line); }
+.answer-list li:last-child { border-bottom: 0; }
+.answer-list .val { font-weight: 700; white-space: nowrap; color: var(--mandi-brown); }
+
+/* Assistant */
+.assistant-answer {
+  white-space: pre-line;
+  background: var(--mandi-sand);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  margin-top: 1rem;
+}
+.assistant-note { font-size: .85rem; color: var(--mandi-muted); margin-top: .8rem; }
+
+/* ---------- Screening form (clinician and self-screen) ---------- */
+
+.q-block { margin-top: 2.2rem; }
+.q-block > h2 { padding-bottom: .4rem; border-bottom: 2px solid var(--mandi-line); }
+.script-note {
+  border-left: 4px solid var(--mandi-sun);
+  background: var(--mandi-cream-light);
+  padding: .7rem 1rem;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--mandi-muted);
+  max-width: 70ch;
+}
+.question {
+  background: var(--mandi-cream-light);
+  border: 1px solid var(--mandi-line);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  margin-top: .8rem;
+}
+/* float + width keeps the question text INSIDE the box (otherwise browsers draw it on the border) */
+.question legend { float: left; width: 100%; padding: 0; font-size: 1rem; font-weight: 600; color: var(--mandi-brown); margin-bottom: .7rem; }
+.question legend + * { clear: left; }
+.question .qnum { color: var(--mandi-orange); font-weight: 700; margin-right: .35rem; }
+
+/* Rating pills: big tap targets, visible checked state */
+.rating { display: flex; flex-wrap: wrap; gap: .5rem; }
+.rating input { position: absolute; opacity: 0; pointer-events: none; }
+.rating label {
+  cursor: pointer;
+  border: 2px solid var(--mandi-line);
+  border-radius: 999px;
+  padding: .45rem 1rem;
+  font-weight: 600;
+  background: #FFFFFF;
+  color: var(--mandi-brown);
+  min-width: 3rem;
+  text-align: center;
+  transition: background-color .12s, border-color .12s;
+}
+.rating label:hover { border-color: var(--mandi-sun); }
+.rating input:checked + label { background: var(--mandi-terracotta); border-color: var(--mandi-terracotta); color: var(--mandi-cream); }
+.rating input:focus-visible + label { outline: 3px solid var(--mandi-orange); outline-offset: 2px; }
+.rating .num { opacity: .7; margin-right: .3rem; font-variant-numeric: tabular-nums; }
+
+.form-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
+
+/* ---------- Home ---------- */
+
+.home-hero {
+  margin: 0 calc(50% - 50vw);       /* full-bleed band, like joinmandi.com */
+  padding: 4.5rem 1rem 4rem;
+  text-align: center;
+}
+.home-hero .inner { max-width: 52rem; margin: 0 auto; }
+.home-hero h1 { font-size: 2.8rem; line-height: 1.05; margin: 0 auto .9rem; max-width: 16ch; }
+@media (min-width: 768px) { .home-hero h1 { font-size: 4.2rem; } }
+.home-hero p { font-size: 1.15rem; color: var(--mandi-cream); margin: 0 auto; }
+.home-hero .form-actions { justify-content: center; }
+
+.task-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); margin-top: 2rem; }
+.task {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: var(--mandi-cream-light);
+  border: 1px solid var(--mandi-line);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.3rem;
+}
+.task:hover { border-color: var(--mandi-sun); color: inherit; }
+.task h2 { font-size: 1.3rem; margin-bottom: .3rem; }
+.task p { margin: 0; color: var(--mandi-muted); font-size: .95rem; }
+
+/* ---------- Analytics ---------- */
+
+.stat-row { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+.stat { background: var(--mandi-cream-light); border: 1px solid var(--mandi-line); border-radius: var(--radius); padding: 1rem 1.2rem; }
+.stat .value { font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; color: var(--mandi-terracotta); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat .label { color: var(--mandi-muted); font-size: .9rem; }
+
+.hbar { display: grid; grid-template-columns: 9rem 1fr 4.5rem; gap: .8rem; align-items: center; padding: .35rem 0; }
+@media (max-width: 575px) { .hbar { grid-template-columns: 7rem 1fr 3.5rem; } }
+.hbar .track { background: var(--mandi-sand); border-radius: 999px; height: .85rem; overflow: hidden; }
+.hbar .fill { height: 100%; border-radius: 999px; background: var(--mandi-orange); }
+.hbar .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--mandi-muted); font-size: .9rem; }
+
+.weekly { display: flex; align-items: flex-end; gap: 6px; height: 10rem; padding-top: .5rem; }
+.weekly .wk { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; }
+.weekly .bar { width: 100%; max-width: 2.4rem; background: linear-gradient(180deg, #DC8248, #D36475); border-radius: 6px 6px 0 0; min-height: 2px; }
+.weekly .count { font-size: .78rem; color: var(--mandi-muted); font-variant-numeric: tabular-nums; }
+.weekly-labels { display: flex; gap: 6px; font-size: .72rem; color: var(--mandi-muted); }
+.weekly-labels span { flex: 1; text-align: center; }
+
+/* ---------- Self-screen (patient on her phone): the full JoinMandi gradient ---------- */
+
+body.selfscreen { background: var(--mandi-gradient); background-attachment: fixed; }
+.selfscreen .site-header { background: var(--mandi-cream); }
+.selfscreen .site-footer { background: transparent; }
+.selfscreen-intro { padding: 2.5rem 0 .5rem; text-align: center; color: var(--mandi-cream); }
+.selfscreen-intro h1 { font-size: 2.4rem; color: var(--mandi-cream); max-width: 18ch; margin: 0 auto .6rem; }
+.selfscreen-intro h1 .accent { color: var(--mandi-sun); display: block; }
+.selfscreen-intro p { color: var(--mandi-cream); margin: 0 auto 1rem; }
+.selfscreen .q-block > h2 { color: var(--mandi-cream); border-bottom-color: rgba(253, 246, 236, .4); }
+.selfscreen .script-note { background: rgba(253, 246, 236, .92); }
+.selfscreen .question legend { font-size: 1.08rem; }
+.selfscreen .rating label { flex: 1 1 40%; padding: .7rem .8rem; }
+@media (min-width: 576px) { .selfscreen .rating label { flex: 0 1 auto; } }
+.selfscreen .alert { max-width: 48rem; margin: 1rem auto; }
+
+/* ---------- QR invite ---------- */
+
+.qr-card { display: grid; gap: 1.5rem; align-items: center; }
+@media (min-width: 768px) { .qr-card { grid-template-columns: auto 1fr; } }
+.qr-card img { width: 15rem; height: 15rem; image-rendering: pixelated; border-radius: var(--radius-sm); background: #fff; padding: .5rem; border: 1px solid var(--mandi-line); }
+.copy-link { word-break: break-all; font-size: .88rem; color: var(--mandi-muted); }
+
+/* ---------- Print: clinicians print results ---------- */
+
+@media print {
+  .site-header, .site-footer, .no-print, .btn { display: none !important; }
+  body { background: #fff; }
+  .mandi-gradient { background: #fff !important; color: #000; border: 1px solid #bbb; }
+  .mandi-gradient h1, .mandi-gradient h2, .score-number, .score-number small,
+  .result-hero .message, .result-hero .score-label { color: #000 !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+/* Full-bleed gradient bands must not cause sideways scrolling */
+main { overflow-x: clip; }
+.home-hero h1 .accent { display: block; color: var(--mandi-sun); }
+
+/* ---------- Sign-in page ---------- */
+
+.login-shell {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  max-width: 64rem;
+  margin: 2.5rem auto 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--mandi-line);
+  background: var(--mandi-cream-light);
+}
+@media (min-width: 900px) { .login-shell { grid-template-columns: 1.1fr 1fr; } }
+.login-welcome { padding: 2.5rem 2rem; display: flex; flex-direction: column; justify-content: center; }
+.login-headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.3rem;
+  line-height: 1.08;
+  color: var(--mandi-cream);
+  margin-bottom: 1rem;
+}
+@media (min-width: 900px) { .login-headline { font-size: 3rem; } }
+.login-headline .accent { display: block; color: var(--mandi-sun); }
+.login-sub { color: var(--mandi-cream); margin: 0; }
+.login-card { padding: 2.5rem 2rem; }
+.login-card h1 { font-size: 2.2rem; }
+.login-help { margin: 1.5rem 0 0; font-size: .9rem; color: var(--mandi-muted); }
+/* Hide the error box when there are no errors to show */
+.validation-summary-valid { display: none; }
+
+/* Start a screening: new patient and  returning patient, side by side */
+.start-grid { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .start-grid { grid-template-columns: 1fr 1fr; align-items: start; } }
+.start-grid .panel + .panel { margin-top: 0; }

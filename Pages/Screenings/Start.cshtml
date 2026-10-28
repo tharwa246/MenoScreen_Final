@@ -1,0 +1,89 @@
+@page
+@model MenoScreen.Pages.Screenings.StartModel
+@{
+    ViewData["Title"] = "Start a screening";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Start a screening</h1>
+        <p>Add her details, or choose her if she's been here before. The questions open straight away.</p>
+    </div>
+</div>
+
+<div class="start-grid">
+    <form method="post" asp-page-handler="New" class="panel" novalidate>
+        <h2>New patient</h2>
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="NewPatient.FullName" class="form-label"></label>
+            <input asp-for="NewPatient.FullName" class="form-control" autocomplete="off" autofocus />
+            <span asp-validation-for="NewPatient.FullName" class="text-danger small"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="NewPatient.PreferredLanguage" class="form-label"></label>
+            <select asp-for="NewPatient.PreferredLanguage" class="form-select">
+                <option value="en">English</option>
+                <option value="zu">isiZulu</option>
+                <option value="xh">isiXhosa</option>
+                <option value="af">Afrikaans</option>
+            </select>
+        </div>
+
+        <fieldset class="panel panel-quiet mb-3">
+            <legend class="form-label h6 mb-2">Consent</legend>
+            <p class="small mb-2">
+                Ask her: <em>"I'd like to ask you some questions about how you've been feeling.
+                Your answers stay private and are only used to help with your care. Is that okay?"</em>
+            </p>
+            <div class="form-check">
+                <input asp-for="NewPatient.ConsentGiven" class="form-check-input" />
+                <label asp-for="NewPatient.ConsentGiven" class="form-check-label"></label>
+            </div>
+            <span asp-validation-for="NewPatient.ConsentGiven" class="text-danger small"></span>
+        </fieldset>
+
+        <button type="submit" class="btn btn-primary btn-lg w-100">Start her screening</button>
+    </form>
+
+    <form method="post" asp-page-handler="Existing" class="panel">
+        <h2>Returning patient</h2>
+
+        @if (!Model.ReturningPatients.Any())
+        {
+            <p class="text-secondary">No returning patients yet. Use "New patient" for her first screening.</p>
+        }
+        else
+        {
+            <div class="mb-3">
+                <label for="ExistingPatientId" class="form-label">Choose her</label>
+                <select id="ExistingPatientId" name="ExistingPatientId" class="form-select" required>
+                    <option value="">Choose a patient</option>
+                    @foreach (var p in Model.ReturningPatients)
+                    {
+                        <option value="@p.Id">@p.FullName</option>
+                    }
+                </select>
+                @if (Model.ExistingError != null)
+                {
+                    <span class="text-danger small">@Model.ExistingError</span>
+                }
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg w-100">Start her screening</button>
+        }
+
+        @if (Model.PatientsWithoutConsent > 0)
+        {
+            <p class="small text-secondary mt-3 mb-0">
+                @Model.PatientsWithoutConsent patient(s) aren't listed because their consent isn't recorded yet.
+                Record it on their page under <a asp-page="/Patients/Index">Patients</a>.
+            </p>
+        }
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,4 +1,80 @@
-﻿@page
+@page
 @model MenoScreen.Pages.Admin.AdminHomeModel
-@{     //
+@{
+    ViewData["Title"] = "Admin";
 }
+
+<div class="page-head">
+    <div>
+        <h1>Admin</h1>
+        <p>Questions, accounts and the record of who accessed patient information.</p>
+    </div>
+</div>
+
+<div class="task-grid mb-4">
+    <a class="task" asp-page="/Questions/Index">
+        <h2>Screening questions</h2>
+        <p>Version @(Model.ActiveVersion?.ToString() ?? "none") is active, with @Model.ActiveQuestionCount questions.</p>
+    </a>
+    <a class="task" asp-page="/Admin/AddStaff">
+        <h2>Add a staff account</h2>
+        <p>Create a sign-in for a new clinician. Only admins can do this.</p>
+    </a>
+    <a class="task" asp-page="/Analytics/Index">
+        <h2>Clinic analytics</h2>
+        <p>Bands, symptom patterns and weekly volume.</p>
+    </a>
+</div>
+
+<section aria-labelledby="audit-title">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-2">
+        <div>
+            <h2 id="audit-title" class="mb-0">Audit log</h2>
+            <p class="text-secondary mb-0">The newest 200 entries. Required for POPIA accountability; entries can't be edited.</p>
+        </div>
+        <form method="get" class="d-flex gap-2">
+            <label for="filter" class="visually-hidden">Filter by action</label>
+            <select id="filter" name="filter" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All actions</option>
+                @foreach (var a in Model.Actions)
+                {
+                    <option value="@a" selected="@(a == Model.Filter)">@a</option>
+                }
+            </select>
+            <noscript><button type="submit" class="btn btn-sm btn-quiet">Filter</button></noscript>
+        </form>
+    </div>
+
+    @if (!Model.Entries.Any())
+    {
+        <div class="empty-state"><p class="mb-0">Nothing logged yet. Entries appear as staff view and export results.</p></div>
+    }
+    else
+    {
+        <div class="table-panel">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th scope="col">When (UTC)</th>
+                        <th scope="col">Who</th>
+                        <th scope="col">Action</th>
+                        <th scope="col">Record</th>
+                        <th scope="col">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in Model.Entries)
+                    {
+                        <tr>
+                            <td class="text-nowrap">@e.At.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            <td>@(e.UserName ?? "Patient (QR link)")</td>
+                            <td><span class="tag">@e.Action</span></td>
+                            <td>@e.EntityType @e.EntityId</td>
+                            <td class="text-secondary">@e.Details</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

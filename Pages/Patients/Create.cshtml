@@ -1,17 +1,22 @@
-﻿@page
+@page
 @model MenoScreen.Pages.Patients.CreateModel
 @{
     ViewData["Title"] = "Add patient";
 }
 
-<h1>Add patient</h1>
+<div class="page-head">
+    <div>
+        <h1>Add patient</h1>
+        <p>Her preferred language sets the language of her handout.</p>
+    </div>
+</div>
 
-<form method="post">
+<form method="post" class="panel form-narrow">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
     <div class="mb-3">
         <label asp-for="Input.FullName" class="form-label"></label>
-        <input asp-for="Input.FullName" class="form-control" />
+        <input asp-for="Input.FullName" class="form-control" autocomplete="off" />
         <span asp-validation-for="Input.FullName" class="text-danger"></span>
     </div>
 
@@ -26,8 +31,25 @@
         <span asp-validation-for="Input.PreferredLanguage" class="text-danger"></span>
     </div>
 
-    <button type="submit" class="btn btn-primary">Save</button>
-    <a asp-page="Index" class="btn btn-secondary">Cancel</a>
+    <fieldset class="panel panel-quiet mb-3">
+        <legend class="form-label h6 mb-2">Consent</legend>
+        <p class="small mb-2">
+            Before you screen her, tell her: <em>"I'd like to ask you some questions about how you've been feeling.
+            Your answers stay private and are only used to help with your care. You can ask to see or delete them at any time.
+            Is that okay?"</em>
+        </p>
+        <div class="form-check">
+            <input asp-for="Input.ConsentGiven" class="form-check-input" />
+            <label asp-for="Input.ConsentGiven" class="form-check-label"></label>
+        </div>
+        <span asp-validation-for="Input.ConsentGiven" class="text-danger"></span>
+    </fieldset>
+
+    <div class="form-actions mt-2">
+        <button type="submit" name="next" value="screen" class="btn btn-primary">Save and start screening</button>
+        <button type="submit" name="next" value="save" class="btn btn-quiet">Save only</button>
+        <a asp-page="Index" class="btn btn-link">Cancel</a>
+    </div>
 </form>
 
 @section Scripts {

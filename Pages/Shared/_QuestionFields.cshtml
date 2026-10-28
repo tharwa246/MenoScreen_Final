@@ -1,0 +1,73 @@
+@* THE 23 QUESTIONS, shared by the clinician form (Screenings/New) and the patient QR page (SelfScreen).
+   How the answers reach the server: each radio button is named like Answers[15], where 15 is
+   the question's Id. ASP.NET collects all of them into the page's Answers dictionary
+   (QuestionId -> 0, 1, 2 or 3). The drop-downs for Q1-Q4 fill TextAnswers the same way.
+   "required" on the first radio of each question stops the form being sent with a gap. *@
+@model MenoScreen.Pages.Shared.QuestionFormModel
+@using MenoScreen.Models
+@using MenoScreen.Pages.Shared
+
+@foreach (var block in Model.Questions.GroupBy(q => q.Block))
+{
+    var type = block.First().Type;
+    <section class="q-block" aria-labelledby="block-@block.First().Id">
+        <h2 id="block-@block.First().Id">@block.Key</h2>
+
+        @if (type == QuestionType.Scored)
+        {
+            @if (Model.SelfScreen)
+            {
+                <p class="script-note">For each one, choose how much it has been affecting you lately.</p>
+            }
+            else
+            {
+                <p class="script-note">
+                    Say to her: "I'd like you to rate how much each symptom has been affecting you:
+                    0 means not at all, 1 a little, 2 quite a bit, and 3 extremely."
+                </p>
+            }
+        }
+
+        @foreach (var q in block)
+        {
+            <fieldset class="question">
+                <legend><span class="qnum">@q.Number.</span>@q.Text</legend>
+
+                @if (q.Type == QuestionType.Context)
+                {
+                    <label class="visually-hidden" for="ctx-@q.Id">Answer to question @q.Number</label>
+                <select id="ctx-@q.Id" name="TextAnswers[@q.Id]" class="form-select" style="max-width: 24rem" required>
+                        <option value="">Choose an answer</option>
+                        @foreach (var option in (q.Options ?? "").Split('|', StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            <option value="@option" selected="@(Model.TextAnswers.GetValueOrDefault(q.Id) == option)">@option</option>
+                        }
+                    </select>
+                }
+                else if (q.Type == QuestionType.Scored)
+                {
+                    <div class="rating">
+                        @for (int i = 0; i <= 3; i++)
+                        {
+                            var id = $"q{q.Id}_{i}";
+                            <input type="radio" id="@id" name="Answers[@q.Id]" value="@i" required="@(i == 0)"
+                                   checked="@(Model.Answers.TryGetValue(q.Id, out var picked) && picked == i)" />
+                            <label for="@id"><span class="num">@i</span>@QuestionFormModel.RatingLabels[i]</label>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="rating">
+                        <input type="radio" id="q@(q.Id)_yes" name="Answers[@q.Id]" value="1" required
+                               checked="@(Model.Answers.TryGetValue(q.Id, out var s1) && s1 == 1)" />
+                        <label for="q@(q.Id)_yes">Yes</label>
+                        <input type="radio" id="q@(q.Id)_no" name="Answers[@q.Id]" value="0"
+                               checked="@(Model.Answers.TryGetValue(q.Id, out var s0) && s0 == 0)" />
+                        <label for="q@(q.Id)_no">No</label>
+                    </div>
+                }
+            </fieldset>
+        }
+    </section>
+}

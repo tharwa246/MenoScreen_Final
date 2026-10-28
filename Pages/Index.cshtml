@@ -1,10 +1,65 @@
-﻿@page
+@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Home";
+    bool isAdmin = User.IsInRole("Admin");
+    bool isClinician = User.IsInRole("Clinician");
+    bool signedIn = User.Identity?.IsAuthenticated == true;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@if (!signedIn)
+{
+    <section class="home-hero mandi-gradient">
+        <div class="inner">
+            <p class="mandi-eyebrow">Talk to Mandi · Khuluma noMandi · Thetha noMandi · Praat met Mandi</p>
+            <h1>Thank you for arriving. <span class="accent">Her health journey starts here.</span></h1>
+            <p>
+                A ten-minute menopause screening for your consulting room. Ask 23 short questions,
+                get a MenoLikelihood score and triage band, and give her a handout in her language.
+            </p>
+            <div class="form-actions">
+                <a class="btn btn-cream btn-lg" asp-area="Identity" asp-page="/Account/Login">Sign in</a>
+                <a class="btn btn-cream-outline btn-lg" href="https://joinmandi.com" target="_blank" rel="noopener">Visit JoinMandi.com</a>
+            </div>
+        </div>
+    </section>
+}
+else
+{
+<section class="pt-4">
+        <h1>Welcome back.</h1>
+        <p class="lead-quiet">What would you like to do?</p>
+
+        <div class="task-grid">
+            @if (isClinician)
+            {
+                <a class="task" asp-page="/Screenings/Start">
+                    <h2>Screen a patient</h2>
+                    <p>Find or add a patient, then run the screening with her.</p>
+                </a>
+                <a class="task" asp-page="/Screenings/Start">
+                    <h2>Send a QR self-screening</h2>
+                    <p>Let her answer on her own phone in the waiting room.</p>
+                </a>
+            }
+            @if (isClinician || isAdmin)
+            {
+                <a class="task" asp-page="/Analytics/Index">
+                    <h2>See clinic analytics</h2>
+                    <p>Triage bands, weekly volume and the most common symptoms.</p>
+                </a>
+            }
+            @if (isAdmin)
+            {
+                <a class="task" asp-page="/Questions/Index">
+                    <h2>Manage questions</h2>
+                    <p>Review the 23 screening questions and their versions.</p>
+                </a>
+                <a class="task" asp-page="/Admin/AdminHome">
+                    <h2>Audit log</h2>
+                    <p>See who viewed or exported patient information.</p>
+                </a>
+            }
+        </div>
+</section>
+}

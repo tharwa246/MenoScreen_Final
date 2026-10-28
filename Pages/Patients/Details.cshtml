@@ -1,0 +1,99 @@
+@page "{id:int}"
+@model MenoScreen.Pages.Patients.DetailsModel
+@{
+    ViewData["Title"] = Model.Patient.FullName;
+}
+
+<a class="back-link" asp-page="Index">Back to patients</a>
+
+<div class="page-head pt-3">
+    <div>
+        <h1>@Model.Patient.FullName</h1>
+        <p>
+            Handout language: @MenoScreen.Pages.Patients.IndexModel.LanguageName(Model.Patient.PreferredLanguage).
+            Added @Model.Patient.CreatedAt.ToString("d MMM yyyy").
+        </p>
+    </div>
+    @if (Model.Patient.ConsentGiven)
+    {
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-page="/Screenings/New" asp-route-patientId="@Model.Patient.Id" class="btn btn-primary">Screen now</a>
+            <a asp-page="/Screenings/Invite" asp-route-patientId="@Model.Patient.Id" class="btn btn-quiet">QR self-screen</a>
+        </div>
+    }
+</div>
+
+@if (Model.StatusMessage != null)
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+
+@if (!Model.Patient.ConsentGiven)
+{
+    <div class="panel panel-quiet mb-4">
+        <h2>Consent not recorded</h2>
+        <p>Ask her whether she agrees to her answers being recorded and used for her care. You can't screen her until she does.</p>
+        <form method="post" asp-page-handler="Consent" asp-route-id="@Model.Patient.Id">
+            <button type="submit" class="btn btn-primary">She agrees: record consent</button>
+        </form>
+    </div>
+}
+
+<h2 class="mt-2">Screening history</h2>
+@if (!Model.History.Any())
+{
+    <div class="empty-state mt-2">
+        <p class="mb-0">No screenings yet.</p>
+    </div>
+}
+else
+{
+    <div class="table-panel mt-2">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Score</th>
+                    <th scope="col">Band</th>
+                    <th scope="col">How</th>
+                    <th scope="col"><span class="visually-hidden">Open</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.History)
+                {
+                    <tr>
+                        <td>@s.ScreenedAt.ToString("d MMM yyyy, HH:mm")</td>
+                        <td>@s.MenoLikelihood / 100</td>
+                        <td><span class="band band-@s.Band.ToLower()">@s.Band</span></td>
+                        <td>@(s.Source == MenoScreen.Models.ScreeningSources.SelfScreen ? "Self-screen (QR)" : "With clinician")</td>
+                        <td class="text-end"><a asp-page="/Screenings/Result" asp-route-id="@s.Id">Open result</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<details class="panel mt-5">
+    <summary class="fw-bold">Her information rights (POPIA)</summary>
+    <div class="mt-3">
+        @if (Model.Patient.ConsentGiven)
+        {
+            <p>Consent recorded on @Model.Patient.ConsentRecordedAt?.ToString("d MMM yyyy, HH:mm") (UTC).</p>
+            <form method="post" asp-page-handler="WithdrawConsent" asp-route-id="@Model.Patient.Id" class="mb-4">
+                <button type="submit" class="btn btn-quiet btn-sm">Withdraw consent</button>
+            </form>
+        }
+
+        <h3>Delete her record</h3>
+        <p>If she asks for her information to be deleted, this removes her details, every screening and every answer. It can't be undone.</p>
+        <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Patient.Id">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="confirmDelete" value="true" id="confirmDelete" />
+                <label class="form-check-label" for="confirmDelete">Yes, permanently delete @Model.Patient.FullName and all her screenings</label>
+            </div>
+            <button type="submit" class="btn btn-outline-danger btn-sm">Delete record</button>
+        </form>
+    </div>
+</details>

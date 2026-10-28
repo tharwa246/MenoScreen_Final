@@ -18,5 +18,12 @@ public class Patient
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // CONSENT (POPIA). Did she agree to her answers being recorded and used for her care?
+    // We also store WHEN and WHICH clinician recorded it, as proof if anyone asks.
+    // ScreeningService refuses to save any screening while ConsentGiven is false.
+    public bool ConsentGiven { get; set; }
+    public DateTime? ConsentRecordedAt { get; set; }
+    public string? ConsentRecordedBy { get; set; }
+
     public List<Screening> Screenings { get; set; } = new();
 }

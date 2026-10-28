@@ -12,11 +12,13 @@ public class NewModel : PageModel
 {
     private readonly ApplicationDbContext _db;
     private readonly ScreeningService _screenings;
+    private readonly AuditService _audit;
 
-    public NewModel(ApplicationDbContext db, ScreeningService screenings)
+    public NewModel(ApplicationDbContext db, ScreeningService screenings, AuditService audit)
     {
         _db = db;
         _screenings = screenings;
+        _audit = audit;
     }
 
     public Patient Patient { get; set; } = null!;
@@ -35,6 +37,11 @@ public class NewModel : PageModel
     public async Task<IActionResult> OnGetAsync(int patientId)
     {
         if (!await LoadAsync(patientId)) return NotFound();
+
+        // POPIA: no consent, no screening
+        if (!Patient.ConsentGiven)
+            return RedirectToPage("/Patients/Details", new { id = patientId });
+
         return Page();
     }
 
@@ -49,6 +56,7 @@ public class NewModel : PageModel
             var screening = await _screenings.SaveScreeningAsync(
                 patientId, clinicianId, Answers, TextAnswers);
 
+            await _audit.LogAsync("CreateScreening", "Screening", screening.Id, $"Patient {patientId}");
             return RedirectToPage("Result", new { id = screening.Id });
         }
         catch (InvalidOperationException ex)
