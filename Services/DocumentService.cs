@@ -146,7 +146,7 @@ public class DocumentService
                     col.Item().PaddingTop(10).Text("Your next step").Bold();
                     col.Item().Text("Scan the code with your phone, or visit:");
                     col.Item().Text(LandingUrl).Bold();
-                    col.Item().Width(140).Image(qrPng);
+                    col.Item().Width(140).Height(140).Image(qrPng).FitArea();
 
                     col.Item().PaddingTop(20).Text("Talk to Mandi · Khuluma noMandi · Thetha noMandi · Praat met Mandi")
                         .Italic();

@@ -14,11 +14,7 @@
         <form method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Question.Id" />
-            <div class="form-group">
-                <label asp-for="Question.QuestionSetVersionId" class="control-label"></label>
-                <select asp-for="Question.QuestionSetVersionId" class="form-control" asp-items="ViewBag.QuestionSetVersionId" ></select>
-                <span asp-validation-for="Question.QuestionSetVersionId" class="text-danger"></span>
-            </div>
+            <input type="hidden" asp-for="Question.QuestionSetVersionId" />
             <div class="form-group">
                 <label asp-for="Question.Number" class="control-label"></label>
                 <input asp-for="Question.Number" class="form-control" />
@@ -41,7 +37,8 @@
             </div>
             <div class="form-group">
                 <label asp-for="Question.Type" class="control-label"></label>
-                <select asp-for="Question.Type" class="form-control" ></select>
+                <select asp-for="Question.Type" class="form-control" 
+                asp-items="Html.GetEnumSelectList<MenoScreen.Models.QuestionType>()"></select>
                 <span asp-validation-for="Question.Type" class="text-danger"></span>
             </div>
             <div class="form-group">

@@ -1,78 +1,64 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using MenoScreen.Data;
 using MenoScreen.Models;
+using MenoScreen.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
-namespace MenoScreen.Pages_Questions
+namespace MenoScreen.Pages_Questions;
+
+public class EditModel : PageModel
 {
-    public class EditModel : PageModel
+    private readonly ApplicationDbContext _db;
+    private readonly VersionService _versions;
+
+    public EditModel(ApplicationDbContext db, VersionService versions)
     {
-        private readonly MenoScreen.Data.ApplicationDbContext _context;
+        _db = db;
+        _versions = versions;
+    }
 
-        public EditModel(MenoScreen.Data.ApplicationDbContext context)
-        {
-            _context = context;
-        }
+    [BindProperty]
+    public Question Question { get; set; } = default!;
 
-        [BindProperty]
-        public Question Question { get; set; } = default!;
+    public async Task<IActionResult> OnGetAsync(int? id)
+    {
+        if (id == null) return NotFound();
 
-        public async Task<IActionResult> OnGetAsync(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+        var question = await _db.Questions.FirstOrDefaultAsync(q => q.Id == id);
+        if (question == null) return NotFound();
 
-            var question =  await _context.Questions.FirstOrDefaultAsync(m => m.Id == id);
-            if (question == null)
-            {
-                return NotFound();
-            }
-            Question = question;
-           ViewData["QuestionSetVersionId"] = new SelectList(_context.QuestionSetVersions, "Id", "Id");
-            return Page();
-        }
+        // Locked versions can't be edited, even by typing the URL
+        if (await _versions.IsLockedAsync(question.QuestionSetVersionId))
+            return RedirectToPage("/Versions/Details", new { id = question.QuestionSetVersionId });
 
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more information, see https://aka.ms/RazorPagesCRUD.
-        public async Task<IActionResult> OnPostAsync()
-        {
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
+        Question = question;
+        return Page();
+    }
 
-            _context.Attach(Question).State = EntityState.Modified;
+    public async Task<IActionResult> OnPostAsync()
+    {
+        // The form doesn't send the navigation property, so don't validate it
+        ModelState.Remove("Question.QuestionSetVersion");
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!QuestionExists(Question.Id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+        var existing = await _db.Questions.FirstOrDefaultAsync(q => q.Id == Question.Id);
+        if (existing == null) return NotFound();
 
-            return RedirectToPage("./Index");
-        }
+        if (await _versions.IsLockedAsync(existing.QuestionSetVersionId))
+            return RedirectToPage("/Versions/Details", new { id = existing.QuestionSetVersionId });
 
-        private bool QuestionExists(int id)
-        {
-            return _context.Questions.Any(e => e.Id == id);
-        }
+        if (!ModelState.IsValid) return Page();
+
+        // Only these fields can change. The version can't be moved.
+        existing.Number = Question.Number;
+        existing.SortOrder = Question.SortOrder;
+        existing.Block = Question.Block;
+        existing.Text = Question.Text;
+        existing.Type = Question.Type;
+        existing.Options = Question.Options;
+
+        await _db.SaveChangesAsync();
+
+        return RedirectToPage("/Versions/Details", new { id = existing.QuestionSetVersionId });
     }
 }

@@ -27,6 +27,8 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Questions", "AdminOnly");
     options.Conventions.AuthorizeFolder("/Patients", "ClinicianOnly");
     options.Conventions.AuthorizeFolder("/Screenings", "ClinicianOnly");
+    options.Conventions.AuthorizeFolder("/Versions", "AdminOnly");
+    options.Conventions.AuthorizeFolder("/Dashboard", "AdminOnly");
 });
 
 
@@ -34,6 +36,7 @@ builder.Services.AddRazorPages(options =>
 builder.Services.AddScoped<ScoringService>();
 builder.Services.AddScoped<ScreeningService>();
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<VersionService>();
 
 var app = builder.Build();
 

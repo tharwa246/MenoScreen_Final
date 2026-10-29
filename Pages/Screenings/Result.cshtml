@@ -11,7 +11,7 @@
     <div class="card-body">
         <p class="mb-1">MenoLikelihood score</p>
         <h2>@Model.Screening.MenoLikelihood / 100</h2>
-        <p class="mb-1">Raw score: @Model.Screening.RawScore / 54</p>
+        <p class="mb-1">Raw score: @Model.Screening.RawScore / @Model.MaxRaw</p>
         <p class="mb-1">Score band: <strong>@Model.Screening.ScoreBand</strong></p>
         <p class="mb-0">Final band: <strong>@Model.Screening.Band</strong></p>
     </div>

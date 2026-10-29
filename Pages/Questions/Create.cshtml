@@ -1,63 +1,60 @@
-@page
+@page "{versionId:int}"
 @model MenoScreen.Pages_Questions.CreateModel
+@{
+    ViewData["Title"] = "Add question";
+}
 
-        @{
-        ViewData["Title"] = "Create";
-        }
-        
-        <h1>Create</h1>
-        
-    <h4>Question</h4>
-    <hr />
-    <div class="row">
-    <div class="col-md-4">
-    <form method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Question.QuestionSetVersionId" class="control-label"></label>
-                <select asp-for="Question.QuestionSetVersionId" class ="form-control" asp-items="ViewBag.QuestionSetVersionId" ></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="Question.Number" class="control-label"></label>
-                <input asp-for="Question.Number" class="form-control" />
-                <span asp-validation-for="Question.Number" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Question.SortOrder" class="control-label"></label>
-                <input asp-for="Question.SortOrder" class="form-control" />
-                <span asp-validation-for="Question.SortOrder" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Question.Block" class="control-label"></label>
-                <input asp-for="Question.Block" class="form-control" />
-                <span asp-validation-for="Question.Block" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Question.Text" class="control-label"></label>
-                <input asp-for="Question.Text" class="form-control" />
-                <span asp-validation-for="Question.Text" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Question.Type" class="control-label"></label>
-                <select asp-for="Question.Type" class="form-control" ></select>
-                <span asp-validation-for="Question.Type" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Question.Options" class="control-label"></label>
-                <input asp-for="Question.Options" class="form-control" />
-                <span asp-validation-for="Question.Options" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+<h1>Add question to version @Model.VersionNumber</h1>
+
+<form method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Type" class="form-label"></label>
+        <select asp-for="Input.Type" class="form-select"
+                asp-items="Html.GetEnumSelectList<MenoScreen.Models.QuestionType>()"></select>
+        <div class="form-text">Scored = rated 0-3. Context = not scored, has answer options. SafetyFlag = the Yes/No question (one per version).</div>
     </div>
-</div>
 
-<div>
-    <a asp-page="Index">Back to List</a>
-</div>
+    <div class="mb-3">
+        <label asp-for="Input.Block" class="form-label"></label>
+        <select asp-for="Input.Block" class="form-select" asp-items="new SelectList(Model.Blocks)">
+            <option value="">Select a block...</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.NewBlock" class="form-label"></label>
+        <input asp-for="Input.NewBlock" class="form-control" />
+        <div class="form-text">Leave empty to use the block chosen above.</div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Text" class="form-label"></label>
+        <input asp-for="Input.Text" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Options" class="form-label"></label>
+        <input asp-for="Input.Options" class="form-control" />
+        <div class="form-text">Context questions only. Separate choices with |  for example: Yes|No|Not sure</div>
+    </div>
+
+    <div class="row">
+        <div class="col mb-3">
+            <label asp-for="Input.Number" class="form-label"></label>
+            <input asp-for="Input.Number" class="form-control" />
+        </div>
+        <div class="col mb-3">
+            <label asp-for="Input.SortOrder" class="form-label"></label>
+            <input asp-for="Input.SortOrder" class="form-control" />
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add question</button>
+    <a asp-page="/Versions/Details" asp-route-id="@Model.VersionId" class="btn btn-secondary">Cancel</a>
+</form>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <partial name="_ValidationScriptsPartial" />
 }

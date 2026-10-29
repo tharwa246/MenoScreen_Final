@@ -21,6 +21,9 @@ public class ResultModel : PageModel
     public Screening Screening { get; set; } = null!;
     public string Message { get; set; } = string.Empty;
 
+    // NEW: the maximum raw score, worked out from the questions actually answered
+    public int MaxRaw { get; set; }
+
     // On-screen messages from section 7 of the brief.
     // Temporary: later these move into the database so the medical team can edit them.
     private static readonly Dictionary<string, string> Messages = new()
@@ -34,13 +37,17 @@ public class ResultModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
+        // CHANGED: also load the answers and their questions, to count the scored ones
         var screening = await _db.Screenings
             .Include(s => s.Patient)
+            .Include(s => s.Answers)
+                .ThenInclude(a => a.Question)
             .FirstOrDefaultAsync(s => s.Id == id);
 
         if (screening == null) return NotFound();
 
         Screening = screening;
+        MaxRaw = screening.Answers.Count(a => a.Question.Type == QuestionType.Scored) * 3;   // NEW
         Message = Messages.GetValueOrDefault(screening.Band, string.Empty);
         return Page();
     }
@@ -57,5 +64,17 @@ public class ResultModel : PageModel
 
         var bytes = _documents.BuildClinicianSummary(screening);
         return File(bytes, "application/pdf", $"clinician-summary-{id}.pdf");
+    }
+
+    public async Task<IActionResult> OnGetHandoutPdfAsync(int id)
+    {
+        var screening = await _db.Screenings
+            .Include(s => s.Patient)
+            .FirstOrDefaultAsync(s => s.Id == id);
+
+        if (screening == null) return NotFound();
+
+        var bytes = _documents.BuildPatientHandout(screening);
+        return File(bytes, "application/pdf", $"patient-handout-{id}.pdf");
     }
 }

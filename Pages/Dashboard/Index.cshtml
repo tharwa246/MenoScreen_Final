@@ -1,0 +1,67 @@
+﻿@page
+@model MenoScreen.Pages.Dashboard.IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h1>Dashboard</h1>
+<p class="text-muted">De-identified totals. No patient names are shown here.</p>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card"><div class="card-body">
+            <p class="mb-1">Total screenings</p>
+            <h2>@Model.Total</h2>
+        </div></div>
+    </div>
+    <div class="col-md-6">
+        <div class="card"><div class="card-body">
+            <p class="mb-1">Average MenoLikelihood score</p>
+            <h2>@Model.AverageScore.ToString("0.0") / 100</h2>
+        </div></div>
+    </div>
+</div>
+
+<h3>Screenings by final band</h3>
+@foreach (var row in Model.ByBand)
+{
+    var pct = Model.Total == 0 ? 0 : row.Count * 100 / Model.Total;
+    <div class="mb-2">
+        <div class="d-flex justify-content-between">
+            <span>@row.Band</span>
+            <span>@row.Count (@pct%)</span>
+        </div>
+        <div class="progress" style="height: 18px;">
+            <div class="progress-bar" role="progressbar" style="width: @pct%"></div>
+        </div>
+    </div>
+}
+
+<h3 class="mt-4">Complex cases: what the score alone would have said</h3>
+<table class="table table-sm w-auto">
+    <thead><tr><th>Score band</th><th>Complex screenings</th></tr></thead>
+    <tbody>
+        @foreach (var row in Model.ComplexByScoreBand)
+        {
+            <tr><td>@row.Band</td><td>@row.Count</td></tr>
+        }
+    </tbody>
+</table>
+
+<h3 class="mt-4">Screenings per month</h3>
+@if (!Model.ByMonth.Any())
+{
+    <p>No screenings yet.</p>
+}
+else
+{
+    <table class="table table-sm w-auto">
+        <thead><tr><th>Month</th><th>Screenings</th></tr></thead>
+        <tbody>
+            @foreach (var row in Model.ByMonth)
+            {
+                <tr><td>@row.Month</td><td>@row.Count</td></tr>
+            }
+        </tbody>
+    </table>
+}
