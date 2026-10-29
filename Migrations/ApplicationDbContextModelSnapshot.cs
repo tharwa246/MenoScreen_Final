@@ -196,6 +196,15 @@ namespace MenoScreen.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ConsultationDurationSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ConsultationEndedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ConsultationStartedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("MenoLikelihood")
                         .HasColumnType("INTEGER");
 

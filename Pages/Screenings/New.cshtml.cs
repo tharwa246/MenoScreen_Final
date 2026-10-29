@@ -5,7 +5,6 @@ using MenoScreen.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-
 namespace MenoScreen.Pages.Screenings;
 
 public class NewModel : PageModel
@@ -13,6 +12,7 @@ public class NewModel : PageModel
     private readonly ApplicationDbContext _db;
     private readonly ScreeningService _screenings;
     private readonly AuditService _audit;
+    public DateTime ConsultationStartedAt { get; set; }
 
     public NewModel(ApplicationDbContext db, ScreeningService screenings, AuditService audit)
     {
@@ -34,6 +34,9 @@ public class NewModel : PageModel
 
     public string? ErrorMessage { get; set; }
 
+    [TempData]
+    public DateTime? ConsultationStartedAtValue { get; set; }
+
     public async Task<IActionResult> OnGetAsync(int patientId)
     {
         if (!await LoadAsync(patientId)) return NotFound();
@@ -42,6 +45,7 @@ public class NewModel : PageModel
         if (!Patient.ConsentGiven)
             return RedirectToPage("/Patients/Details", new { id = patientId });
 
+        ConsultationStartedAtValue = DateTime.UtcNow;
         return Page();
     }
 
@@ -54,7 +58,7 @@ public class NewModel : PageModel
         try
         {
             var screening = await _screenings.SaveScreeningAsync(
-                patientId, clinicianId, Answers, TextAnswers);
+                patientId, clinicianId, Answers, TextAnswers, ConsultationStartedAtValue);
 
             await _audit.LogAsync("CreateScreening", "Screening", screening.Id, $"Patient {patientId}");
             return RedirectToPage("Result", new { id = screening.Id });

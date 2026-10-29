@@ -8,6 +8,7 @@ public record BandCount(string Band, int Count, int Percent);
 public record WeekCount(DateTime WeekStart, int Count);
 public record BlockAverage(string Block, int AveragePercent);
 
+
 public class AnalyticsSummary
 {
     public int TotalPatients { get; init; }
@@ -19,6 +20,7 @@ public class AnalyticsSummary
     public List<BandCount> Bands { get; init; } = new();
     public List<WeekCount> Weekly { get; init; } = new();
     public List<BlockAverage> BlockAverages { get; init; } = new();
+    public int AverageConsultationDurationSeconds { get; init; }
 }
 
 // THE ANALYTICS DASHBOARD
@@ -39,7 +41,7 @@ public class AnalyticsService
         // A clinic has hundreds of screenings, not millions, so this is fast, and it
         // behaves the same on SQLite and Postgres (date maths differs between databases).
         var screenings = await _db.Screenings
-            .Select(s => new { s.ScreenedAt, s.Band, s.MenoLikelihood, s.Source })
+            .Select(s => new { s.ScreenedAt, s.Band, s.MenoLikelihood, s.Source, s.ConsultationDurationSeconds})
             .ToListAsync();
 
         int total = screenings.Count;
@@ -84,7 +86,14 @@ public class AnalyticsService
             SelfScreenCount = screenings.Count(s => s.Source == ScreeningSources.SelfScreen),
             Bands = bands,
             Weekly = weekly,
-            BlockAverages = blockAverages
+            BlockAverages = blockAverages,
+            AverageConsultationDurationSeconds = (int)Math.Round(
+                screenings
+                    .Where(s => s.Source == ScreeningSources.Clinician &&
+                                s.ConsultationDurationSeconds.HasValue)
+                    .Select(s => s.ConsultationDurationSeconds!.Value)
+                    .DefaultIfEmpty(0)
+                    .Average())
         };
     }
 }

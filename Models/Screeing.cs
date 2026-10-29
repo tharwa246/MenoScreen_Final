@@ -34,4 +34,10 @@ public class Screening
     public string Source { get; set; } = ScreeningSources.Clinician;
 
     public List<Answer> Answers { get; set; } = new();
+
+    public DateTime? ConsultationStartedAt { get; set; }
+
+    public DateTime? ConsultationEndedAt { get; set; }
+
+    public int? ConsultationDurationSeconds { get; set; }
 }

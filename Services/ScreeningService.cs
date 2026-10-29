@@ -43,10 +43,18 @@ public class ScreeningService
         int patientId,
         string clinicianId,
         IDictionary<int, int> numericAnswers,
-        IDictionary<int, string> textAnswers)
+        IDictionary<int, string> textAnswers,
+        DateTime? consultationStartedAt = null)
     {
         var screening = await BuildScreeningAsync(patientId, clinicianId, numericAnswers, textAnswers, ScreeningSources.Clinician);
-
+    if (consultationStartedAt.HasValue)
+        {
+             screening.ConsultationStartedAt = consultationStartedAt.Value;
+             screening.ConsultationEndedAt = DateTime.UtcNow;
+             screening.ConsultationDurationSeconds =
+        Math.Max(0, (int)(screening.ConsultationEndedAt.Value - screening.ConsultationStartedAt.Value).TotalSeconds);
+} 
+//The above calculates the duration on the server when the clinician submits the questionnaire and stores the results on the screening.
         _db.Screenings.Add(screening);
         await _db.SaveChangesAsync();   // saves the screening and all its answers together
         return screening;

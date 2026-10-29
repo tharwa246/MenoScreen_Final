@@ -4,6 +4,7 @@
     ViewData["Title"] = "Analytics";
     var m = Model.Summary;
     int weekMax = Math.Max(1, m.Weekly.Count == 0 ? 1 : m.Weekly.Max(w => w.Count));
+    int averageConsultationMinutes = (int)Math.Round(m.AverageConsultationDurationSeconds / 60.0);
 }
 
 <div class="page-head">
@@ -33,6 +34,7 @@ else
         <div class="stat"><div class="value">@m.ComplexCount</div><div class="label">Safety flags (Complex)</div></div>
         <div class="stat"><div class="value">@m.SelfScreenCount</div><div class="label">Done by QR self-screen</div></div>
         <div class="stat"><div class="value">@m.TotalPatients</div><div class="label">Patients</div></div>
+        <div class="stat"><div class="value">@averageConsultationMinutes min</div><div class="label">Average consultation duration</div></div>
     </div>
 
     <div class="row g-4 mt-1">

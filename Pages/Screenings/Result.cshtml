@@ -7,6 +7,9 @@
     var s = Model.Screening;
     var bandClass = s.Band.ToLower();
     var blockTotals = Model.Blocks.ToDictionary(b => b.Block);
+    var southAfricaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("South Africa Standard Time");
+    var screenedAtSouthAfrica = TimeZoneInfo.ConvertTimeFromUtc(
+        DateTime.SpecifyKind(s.ScreenedAt, DateTimeKind.Utc), southAfricaTimeZone);
 }
 
 <a class="back-link no-print" asp-page="/Patients/Details" asp-route-id="@s.PatientId">Back to @s.Patient.FullName</a>
@@ -15,7 +18,7 @@
     <div>
         <h1>Result for @s.Patient.FullName</h1>
         <p>
-            Screened @s.ScreenedAt.ToString("d MMM yyyy, HH:mm") (UTC),
+            Screened @screenedAtSouthAfrica.ToString("d MMM yyyy, HH:mm") (South Africa time),
             @(s.Source == ScreeningSources.SelfScreen ? "by her own phone (QR self-screen)" : "with a clinician").
         </p>
     </div>

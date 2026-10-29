@@ -62,8 +62,11 @@ else
             <tbody>
                 @foreach (var s in Model.History)
                 {
+                    var southAfricaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("South Africa Standard Time");
+                    var screenedAtSouthAfrica = TimeZoneInfo.ConvertTimeFromUtc(
+                        DateTime.SpecifyKind(s.ScreenedAt, DateTimeKind.Utc), southAfricaTimeZone);
                     <tr>
-                        <td>@s.ScreenedAt.ToString("d MMM yyyy, HH:mm")</td>
+                        <td>@screenedAtSouthAfrica.ToString("d MMM yyyy, HH:mm")</td>
                         <td>@s.MenoLikelihood / 100</td>
                         <td><span class="band band-@s.Band.ToLower()">@s.Band</span></td>
                         <td>@(s.Source == MenoScreen.Models.ScreeningSources.SelfScreen ? "Self-screen (QR)" : "With clinician")</td>
