@@ -6,26 +6,19 @@ using MenoScreen.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ---------------------------------------------------------------------------
-// DATABASE
-// Which database do we use? We read one setting, "Database:Provider":
-//   - "Sqlite"   (the default) = a local file called app.db in this project folder.
-//                 Good for development: nothing to install, nothing online.
-//   - "Postgres" = a database hosted online (e.g. Supabase or Neon), so the whole
-//                 team and a deployed site can share the same data.
-// The connection string says WHERE the database is. For Postgres it contains a
-// password, so it lives in "user-secrets" on each laptop, never in git (SETUP.md).
-// The rest of the app doesn't care which one is used: Entity Framework talks to both.
+// DATABASE: PostgreSQL, a real database server
+//   - Development: the team's shared database on Neon. Its address (which contains
+//     the password) is kept in user-secrets on each laptop, never in git (SETUP.md).
+//   - Live site:   Heroku Postgres. Heroku hands the app its address in a setting
+//     called DATABASE_URL, so we check that first.
+// The tables themselves are defined by the Migrations folder (see block 0 below).
 // ---------------------------------------------------------------------------
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-var dbProvider = builder.Configuration["Database:Provider"] ?? "Sqlite";
+var databaseAddress = builder.Configuration["DATABASE_URL"]
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("No database connection string found. See SETUP.md.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-{
-    if (dbProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
-        options.UseNpgsql(connectionString);
-    else
-        options.UseSqlite(connectionString);
-});
+    options.UseNpgsql(DatabaseUrl.ToNpgsqlConnectionString(databaseAddress)));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
