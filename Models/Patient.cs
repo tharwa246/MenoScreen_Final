@@ -18,6 +18,10 @@ public class Patient
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // Which clinic he/she belongs to - only that clinic's clinicians can see her.
+    public int ClinicId { get; set; }
+    public Clinic Clinic { get; set; } = null!;
+
     // CONSENT (POPIA). Did she agree to her answers being recorded and used for her care?
     // We also store WHEN and WHICH clinician recorded it, as proof if anyone asks.
     // ScreeningService refuses to save any screening while ConsentGiven is false.

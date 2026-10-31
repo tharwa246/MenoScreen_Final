@@ -11,13 +11,15 @@ public class ResultModel : PageModel
     private readonly DocumentService _documents;
     private readonly AuditService _audit;
     private readonly ClinicianAssistantService _assistant;
+    private readonly ClinicScopeService _scope;
 
-    public ResultModel(ScreeningService screenings, DocumentService documents, AuditService audit, ClinicianAssistantService assistant)
+    public ResultModel(ScreeningService screenings, DocumentService documents, AuditService audit, ClinicianAssistantService assistant, ClinicScopeService scope)
     {
         _screenings = screenings;
         _documents = documents;
         _audit = audit;
         _assistant = assistant;
+        _scope = scope;
     }
 
     public Screening Screening { get; set; } = null!;
@@ -88,7 +90,7 @@ public class ResultModel : PageModel
     public async Task<IActionResult> OnGetClinicianPdfAsync(int id)
     {
         var screening = await _screenings.LoadFullAsync(id);
-        if (screening == null) return NotFound();
+        if (screening == null || await _scope.FindPatientAsync(screening.PatientId) == null) return NotFound();
 
         await _audit.LogAsync("ExportClinicianPdf", "Screening", id);
         var bytes = _documents.BuildClinicianSummary(screening);
@@ -98,7 +100,7 @@ public class ResultModel : PageModel
     public async Task<IActionResult> OnGetHandoutPdfAsync(int id)
     {
         var screening = await _screenings.LoadFullAsync(id);
-        if (screening == null) return NotFound();
+        if (screening == null || await _scope.FindPatientAsync(screening.PatientId) == null) return NotFound();
 
         await _audit.LogAsync("ExportHandoutPdf", "Screening", id);
         var bytes = _documents.BuildPatientHandout(screening);
@@ -108,7 +110,8 @@ public class ResultModel : PageModel
     private async Task<bool> LoadAsync(int id)
     {
         var screening = await _screenings.LoadFullAsync(id);
-        if (screening == null) return false;
+        // Another clinic's result counts as "not found"
+        if (screening == null || await _scope.FindPatientAsync(screening.PatientId) == null) return false;
 
         Screening = screening;
         Message = Messages.GetValueOrDefault(screening.Band, string.Empty);

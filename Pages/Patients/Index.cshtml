@@ -7,6 +7,10 @@
 <div class="page-head">
     <div>
         <h1>Patients</h1>
+        @if (Model.ClinicName != null)
+        {
+            <p class="fw-semibold mb-1">@Model.ClinicName</p>
+        }
         <p>Find a patient to screen her, send her a QR self-screening, or see her history.</p>
     </div>
     <a asp-page="Create" class="btn btn-primary">Add patient</a>

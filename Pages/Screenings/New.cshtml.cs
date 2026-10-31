@@ -13,12 +13,14 @@ public class NewModel : PageModel
     private readonly ApplicationDbContext _db;
     private readonly ScreeningService _screenings;
     private readonly AuditService _audit;
+    private readonly ClinicScopeService _scope;
 
-    public NewModel(ApplicationDbContext db, ScreeningService screenings, AuditService audit)
+    public NewModel(ApplicationDbContext db, ScreeningService screenings, AuditService audit, ClinicScopeService scope)
     {
         _db = db;
         _screenings = screenings;
         _audit = audit;
+        _scope = scope;
     }
 
     public Patient Patient { get; set; } = null!;
@@ -69,7 +71,7 @@ public class NewModel : PageModel
 
     private async Task<bool> LoadAsync(int patientId)
     {
-        var patient = await _db.Patients.FindAsync(patientId);
+        var patient = await _scope.FindPatientAsync(patientId);
         if (patient == null) return false;
 
         Patient = patient;

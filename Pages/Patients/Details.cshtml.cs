@@ -12,11 +12,13 @@ public class DetailsModel : PageModel
 {
     private readonly ApplicationDbContext _db;
     private readonly AuditService _audit;
+    private readonly ClinicScopeService _scope;
 
-    public DetailsModel(ApplicationDbContext db, AuditService audit)
+    public DetailsModel(ApplicationDbContext db, AuditService audit, ClinicScopeService scope)
     {
         _db = db;
         _audit = audit;
+        _scope = scope;
     }
 
     public Patient Patient { get; set; } = null!;
@@ -36,7 +38,7 @@ public class DetailsModel : PageModel
     // OnPostWithdrawConsent and OnPostDelete. The form says which one with asp-page-handler.
     public async Task<IActionResult> OnPostConsentAsync(int id)
     {
-        var patient = await _db.Patients.FindAsync(id);
+        var patient = await _scope.FindPatientAsync(id);
         if (patient == null) return NotFound();
 
         patient.ConsentGiven = true;
@@ -51,7 +53,7 @@ public class DetailsModel : PageModel
 
     public async Task<IActionResult> OnPostWithdrawConsentAsync(int id)
     {
-        var patient = await _db.Patients.FindAsync(id);
+        var patient = await _scope.FindPatientAsync(id);
         if (patient == null) return NotFound();
 
         patient.ConsentGiven = false;
@@ -70,7 +72,7 @@ public class DetailsModel : PageModel
     // The clinician must tick a confirmation box first, because this can't be undone.
     public async Task<IActionResult> OnPostDeleteAsync(int id, bool confirmDelete)
     {
-        var patient = await _db.Patients.FindAsync(id);
+        var patient = await _scope.FindPatientAsync(id);
         if (patient == null) return NotFound();
 
         if (!confirmDelete)
@@ -89,7 +91,7 @@ public class DetailsModel : PageModel
 
     private async Task<bool> LoadAsync(int id)
     {
-        var patient = await _db.Patients.FindAsync(id);
+        var patient = await _scope.FindPatientAsync(id);
         if (patient == null) return false;
 
         Patient = patient;

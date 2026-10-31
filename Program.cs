@@ -83,6 +83,7 @@ builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<InviteService>();
 builder.Services.AddScoped<AnalyticsService>();
+builder.Services.AddScoped<ClinicScopeService>();
 // AI clinician assistant: the provider's address, model and key all come from
 // user-secrets (see SETUP.md), so none of them are stored in the code or in git.
 builder.Services.AddHttpClient<ClinicianAssistantService>(client =>
@@ -184,11 +185,18 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-//SEEDING BLOCK 2: the 23 questions
+//SEEDING BLOCK 2: the 23 questions, then (on a laptop only) the demo clinics and patients
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await SeedData.SeedQuestionsAsync(db);
+
+    if (app.Environment.IsDevelopment())
+    {
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+        var screenings = scope.ServiceProvider.GetRequiredService<ScreeningService>();
+        await DemoDataSeeder.SeedAsync(db, userManager, screenings);
+    }
 }
 // PDF FONTS: load the website's fonts from the Fonts folder so the PDFs match the site
 DocumentService.RegisterFonts(Path.Combine(app.Environment.ContentRootPath, "Fonts"));

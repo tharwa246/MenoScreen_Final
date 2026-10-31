@@ -16,12 +16,14 @@ public class InviteModel : PageModel
     private readonly ApplicationDbContext _db;
     private readonly InviteService _invites;
     private readonly AuditService _audit;
+    private readonly ClinicScopeService _scope;
 
-    public InviteModel(ApplicationDbContext db, InviteService invites, AuditService audit)
+    public InviteModel(ApplicationDbContext db, InviteService invites, AuditService audit, ClinicScopeService scope)
     {
         _db = db;
         _invites = invites;
         _audit = audit;
+        _scope = scope;
     }
 
     public Patient Patient { get; set; } = null!;
@@ -32,7 +34,7 @@ public class InviteModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int patientId)
     {
-        var patient = await _db.Patients.FindAsync(patientId);
+        var patient = await _scope.FindPatientAsync(patientId);
         if (patient == null) return NotFound();
         Patient = patient;
 
@@ -44,7 +46,7 @@ public class InviteModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(int patientId)
     {
-        var patient = await _db.Patients.FindAsync(patientId);
+        var patient = await _scope.FindPatientAsync(patientId);
         if (patient == null) return NotFound();
         Patient = patient;
 

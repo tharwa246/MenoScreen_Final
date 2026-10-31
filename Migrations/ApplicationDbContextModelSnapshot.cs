@@ -86,10 +86,33 @@ namespace MenoScreen.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("MenoScreen.Models.Clinic", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Area")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Clinics");
+                });
+
             modelBuilder.Entity("MenoScreen.Models.Patient", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ClinicId")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("ConsentGiven")
@@ -118,6 +141,8 @@ namespace MenoScreen.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClinicId");
 
                     b.ToTable("Patients");
                 });
@@ -267,6 +292,27 @@ namespace MenoScreen.Migrations
                         .IsUnique();
 
                     b.ToTable("ScreeningInvites");
+                });
+
+            modelBuilder.Entity("MenoScreen.Models.StaffProfile", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ClinicId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("ClinicId");
+
+                    b.ToTable("StaffProfiles");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -484,6 +530,17 @@ namespace MenoScreen.Migrations
                     b.Navigation("Screening");
                 });
 
+            modelBuilder.Entity("MenoScreen.Models.Patient", b =>
+                {
+                    b.HasOne("MenoScreen.Models.Clinic", "Clinic")
+                        .WithMany("Patients")
+                        .HasForeignKey("ClinicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Clinic");
+                });
+
             modelBuilder.Entity("MenoScreen.Models.Question", b =>
                 {
                     b.HasOne("MenoScreen.Models.QuestionSetVersion", "QuestionSetVersion")
@@ -523,6 +580,16 @@ namespace MenoScreen.Migrations
                         .IsRequired();
 
                     b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("MenoScreen.Models.StaffProfile", b =>
+                {
+                    b.HasOne("MenoScreen.Models.Clinic", "Clinic")
+                        .WithMany()
+                        .HasForeignKey("ClinicId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Clinic");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -574,6 +641,11 @@ namespace MenoScreen.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MenoScreen.Models.Clinic", b =>
+                {
+                    b.Navigation("Patients");
                 });
 
             modelBuilder.Entity("MenoScreen.Models.Patient", b =>

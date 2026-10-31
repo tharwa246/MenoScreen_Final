@@ -16,11 +16,13 @@ public class StartModel : PageModel
 {
     private readonly ApplicationDbContext _db;
     private readonly AuditService _audit;
+    private readonly ClinicScopeService _scope;
 
-    public StartModel(ApplicationDbContext db, AuditService audit)
+    public StartModel(ApplicationDbContext db, AuditService audit, ClinicScopeService scope)
     {
         _db = db;
         _audit = audit;
+        _scope = scope;
     }
 
     // Returning patients who can be screened (consent recorded), for the drop-down
@@ -70,10 +72,20 @@ public class StartModel : PageModel
             return Page();
         }
 
+        // The new patient joins the clinician's own clinic
+        var clinicId = await _scope.GetClinicIdAsync();
+        if (clinicId == null)
+        {
+            ModelState.AddModelError(string.Empty, "Your account isn't linked to a clinic yet. Ask an admin to assign you to one.");
+            await LoadAsync();
+            return Page();
+        }
+
         var patient = new Patient
         {
             FullName = NewPatient.FullName.Trim(),
             PreferredLanguage = NewPatient.PreferredLanguage,
+            ClinicId = clinicId.Value,
             ConsentGiven = true,
             ConsentRecordedAt = DateTime.UtcNow,
             ConsentRecordedBy = User.FindFirstValue(ClaimTypes.NameIdentifier)
@@ -88,7 +100,7 @@ public class StartModel : PageModel
     // Button 2: pick a returning patient and go straight to her screening
     public async Task<IActionResult> OnPostExistingAsync()
     {
-        var patient = ExistingPatientId is int id ? await _db.Patients.FindAsync(id) : null;
+           var patient = ExistingPatientId is int id ? await _scope.FindPatientAsync(id) : null;
 
         if (patient == null || !patient.ConsentGiven)
         {
@@ -103,10 +115,11 @@ public class StartModel : PageModel
 
     private async Task LoadAsync()
     {
-        ReturningPatients = await _db.Patients
+                var patients = await _scope.PatientsAsync();
+        ReturningPatients = await patients
             .Where(p => p.ConsentGiven)
             .OrderBy(p => p.FullName)
             .ToListAsync();
-        PatientsWithoutConsent = await _db.Patients.CountAsync(p => !p.ConsentGiven);
+        PatientsWithoutConsent = await patients.CountAsync(p => !p.ConsentGiven);
     }
 }

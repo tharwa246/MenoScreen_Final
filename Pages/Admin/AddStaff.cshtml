@@ -22,6 +22,12 @@
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
     <div class="mb-3">
+        <label asp-for="Input.FullName" class="form-label"></label>
+        <input asp-for="Input.FullName" class="form-control" autocomplete="off" />
+        <span asp-validation-for="Input.FullName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
         <label asp-for="Input.Email" class="form-label"></label>
         <input asp-for="Input.Email" class="form-control" autocomplete="off" />
         <span asp-validation-for="Input.Email" class="text-danger"></span>
@@ -43,6 +49,19 @@
             }
         </select>
         <span asp-validation-for="Input.Role" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.ClinicId" class="form-label"></label>
+        <select asp-for="Input.ClinicId" class="form-select">
+            <option value="">Choose a clinic</option>
+            @foreach (var clinic in Model.Clinics)
+            {
+                <option value="@clinic.Id">@clinic.Name</option>
+            }
+        </select>
+        <div class="form-text">Clinicians only. Admins can see every clinic.</div>
+        <span asp-validation-for="Input.ClinicId" class="text-danger"></span>
     </div>
 
     <button type="submit" class="btn btn-primary">Create account</button>
