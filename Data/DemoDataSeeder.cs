@@ -20,16 +20,23 @@ public static class DemoDataSeeder
         ("Soweto Family Practice",     "Soweto",    "clinician3@menoscreen.test", "Lerato Mokoena", 0.68),
     };
 
-    private static readonly string[] FirstNames =
+    // How many made-up patients each clinic gets (keep this at 12 or less, so names never repeat)
+    private const int PatientsPerClinic = 12;
+
+    // Each clinic has its OWN 12 first names and 12 surnames, in the same order as DemoClinics,
+    // so no name ever appears at two clinics
+    private static readonly string[][] FirstNames =
     {
-        "Nomsa", "Ayesha", "Lindiwe", "Marlene", "Zanele", "Fatima", "Busisiwe", "Charmaine", "Precious", "Elmarie",
-        "Nandi", "Rukhsana", "Thembeka", "Sharon", "Palesa", "Yolanda", "Noluthando", "Bronwyn", "Mpho", "Gail"
+        new[] { "Nomsa", "Lindiwe", "Zanele", "Thembeka", "Noluthando", "Busisiwe", "Siphokazi", "Nandipha", "Ayanda", "Zoleka", "Lulama", "Nobuhle" },
+        new[] { "Marlene", "Ayesha", "Charmaine", "Elmarie", "Fatima", "Rukhsana", "Bronwyn", "Gail", "Sharon", "Yolanda", "Natasha", "Leigh" },
+        new[] { "Palesa", "Mpho", "Dineo", "Refilwe", "Boitumelo", "Nthabiseng", "Tshepiso", "Karabo", "Masego", "Lesedi", "Puleng", "Keabetswe" }
     };
 
-    private static readonly string[] Surnames =
+    private static readonly string[][] Surnames =
     {
-        "Dlamini", "Jacobs", "Mthembu", "Botha", "Ndlovu", "Adams", "Khumalo", "Petersen",
-        "Mahlangu", "Daniels", "Zulu", "Hendricks", "Sithole", "Naidoo", "Mokoena", "Fortuin"
+        new[] { "Mabandla", "Ntshona", "Qwabe", "Mavuso", "Sityana", "Makhaya", "Bikitsha", "Tyali", "Dyantyi", "Mgudlwa", "Ngcobo", "Mfeka" },
+        new[] { "Jacobs", "Botha", "Adams", "Petersen", "Daniels", "Hendricks", "Fortuin", "Abrahams", "Van der Merwe", "Isaacs", "Solomons", "Steyn" },
+        new[] { "Mahlangu", "Sithole", "Molefe", "Radebe", "Masilo", "Tau", "Motaung", "Shabalala", "Maseko", "Phiri", "Mathebula", "Seabi" }
     };
 
     private static readonly string[] Languages = { "en", "en", "zu", "xh", "af" };
@@ -48,8 +55,9 @@ public static class DemoDataSeeder
         if (admin != null && !await db.StaffProfiles.AnyAsync(s => s.UserId == admin.Id))
             db.StaffProfiles.Add(new StaffProfile { UserId = admin.Id, FullName = "Test Admin" });
 
-        foreach (var c in DemoClinics)
+          for (int ci = 0; ci < DemoClinics.Length; ci++)
         {
+            var c = DemoClinics[ci];
             var clinic = new Clinic { Name = c.Name, Area = c.Area };
             db.Clinics.Add(clinic);
             await db.SaveChangesAsync();
@@ -65,15 +73,17 @@ public static class DemoDataSeeder
             db.StaffProfiles.Add(new StaffProfile { UserId = clinician.Id, FullName = c.Clinician, ClinicId = clinic.Id });
             await db.SaveChangesAsync();
 
-            for (int i = 0; i < 30; i++)
+            for (int i = 0; i < PatientsPerClinic; i++)
             {
                 // Her first visit was some time in the last 12 weeks
                 var firstVisit = DateTime.UtcNow.AddDays(-rng.Next(7, 84)).AddHours(-rng.Next(0, 8));
-                bool consent = i >= 2;   // the first two have no consent yet, to show that message
+                bool consent = i >= 1;   // the first one has no consent yet, to show that message
 
                 var patient = new Patient
                 {
-                    FullName = $"{FirstNames[rng.Next(FirstNames.Length)]} {Surnames[rng.Next(Surnames.Length)]}",
+                    // First name i, paired with a shuffled surname. Stepping by 5 through 12 surnames
+                    // visits each one exactly once, so no two patients share a name.
+                    FullName = $"{FirstNames[ci][i]} {Surnames[ci][(i * 5) % Surnames[ci].Length]}",
                     PreferredLanguage = Languages[rng.Next(Languages.Length)],
                     ClinicId = clinic.Id,
                     CreatedAt = firstVisit,
