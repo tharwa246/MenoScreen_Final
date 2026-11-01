@@ -1,0 +1,42 @@
+﻿@page
+@model MenoScreen.Pages.Appointments.IndexModel
+@{
+    ViewData["Title"] = "Appointments";
+}
+
+<h1>Appointments</h1>
+
+@if (Model.Message != null)
+{
+    <div class="alert alert-info">@Model.Message</div>
+}
+
+@if (!Model.Rows.Any())
+{
+    <p>No appointments yet. Use the Book button on the Patients page.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr><th>When</th><th>Patient</th><th>Doctor</th><th>Practice</th><th>Note</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Rows)
+            {
+                <tr>
+                    <td>@r.StartsAt.ToLocalTime().ToString("ddd d MMM yyyy HH:mm")</td>
+                    <td>@r.PatientName</td>
+                    <td>@r.DoctorName</td>
+                    <td>@r.Practice</td>
+                    <td>@r.Note</td>
+                    <td>
+                        <form method="post" asp-page-handler="Cancel" asp-route-id="@r.Id">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

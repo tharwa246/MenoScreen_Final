@@ -31,6 +31,7 @@ else
                     <td>@p.PreferredLanguage</td>
                     <td>@p.CreatedAt.ToString("yyyy-MM-dd")</td>
                     <td><a asp-page="/Screenings/New" asp-route-patientId="@p.Id" class="btn btn-sm btn-primary">Screen</a></td>
+                    <td><a asp-page="/Appointments/Book" asp-route-patientId="@p.Id" class="btn btn-sm btn-outline-primary">Book</a></td>
                 </tr>
             }
         </tbody>

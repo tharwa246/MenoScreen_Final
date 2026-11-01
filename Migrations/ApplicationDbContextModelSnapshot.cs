@@ -45,6 +45,103 @@ namespace MenoScreen.Migrations
                     b.ToTable("Answers");
                 });
 
+            modelBuilder.Entity("MenoScreen.Models.Appointment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AvailabilitySlotId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BookedById")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AvailabilitySlotId")
+                        .IsUnique();
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("Appointments");
+                });
+
+            modelBuilder.Entity("MenoScreen.Models.AvailabilitySlot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("EndsAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
+
+                    b.ToTable("AvailabilitySlots");
+                });
+
+            modelBuilder.Entity("MenoScreen.Models.Doctor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsMenopauseTrained")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsSpecialist")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Languages")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Practice")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Province")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Doctors");
+                });
+
             modelBuilder.Entity("MenoScreen.Models.Patient", b =>
                 {
                     b.Property<int>("Id")
@@ -389,6 +486,36 @@ namespace MenoScreen.Migrations
                     b.Navigation("Screening");
                 });
 
+            modelBuilder.Entity("MenoScreen.Models.Appointment", b =>
+                {
+                    b.HasOne("MenoScreen.Models.AvailabilitySlot", "AvailabilitySlot")
+                        .WithOne("Appointment")
+                        .HasForeignKey("MenoScreen.Models.Appointment", "AvailabilitySlotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MenoScreen.Models.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AvailabilitySlot");
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("MenoScreen.Models.AvailabilitySlot", b =>
+                {
+                    b.HasOne("MenoScreen.Models.Doctor", "Doctor")
+                        .WithMany("Slots")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+                });
+
             modelBuilder.Entity("MenoScreen.Models.Question", b =>
                 {
                     b.HasOne("MenoScreen.Models.QuestionSetVersion", "QuestionSetVersion")
@@ -468,6 +595,16 @@ namespace MenoScreen.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MenoScreen.Models.AvailabilitySlot", b =>
+                {
+                    b.Navigation("Appointment");
+                });
+
+            modelBuilder.Entity("MenoScreen.Models.Doctor", b =>
+                {
+                    b.Navigation("Slots");
                 });
 
             modelBuilder.Entity("MenoScreen.Models.Patient", b =>

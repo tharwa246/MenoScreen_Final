@@ -1,0 +1,104 @@
+﻿@page
+@model MenoScreen.Pages.Doctors.IndexModel
+@{
+    ViewData["Title"] = "Doctors and availability";
+}
+
+<h1>Doctors and availability</h1>
+
+@if (Model.Message != null)
+{
+    <div class="alert alert-info">@Model.Message</div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>Add a doctor</h3>
+        <form method="post" asp-page-handler="AddDoctor">
+            <div class="mb-2"><input name="fullName" class="form-control" placeholder="Full name (fake names only)" /></div>
+            <div class="mb-2"><input name="practice" class="form-control" placeholder="Practice" /></div>
+            <div class="mb-2"><input name="city" class="form-control" placeholder="City" /></div>
+            <div class="mb-2"><input name="province" class="form-control" placeholder="Province" /></div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="isSpecialist" value="true" id="spec" />
+                <label class="form-check-label" for="spec">Specialist (needed for Complex patients)</label>
+            </div>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="isMenopauseTrained" value="true" id="trained" />
+                <label class="form-check-label" for="trained">Menopause-trained</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Add doctor</button>
+        </form>
+    </div>
+
+    <div class="col-md-6">
+        <h3>Add a time slot</h3>
+        <form method="post" asp-page-handler="AddSlot">
+            <div class="mb-2">
+                <select name="doctorId" class="form-select">
+                    <option value="0">Choose a doctor...</option>
+                    @foreach (var d in Model.DoctorList)
+                    {
+                        <option value="@d.Id">@d.FullName</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-2">
+                <input type="datetime-local" name="startsAt" class="form-control" />
+                <div class="form-text">Entered in your computer's local time.</div>
+            </div>
+            <div class="mb-2">
+                <input type="number" name="minutes" value="30" class="form-control" />
+                <div class="form-text">Length in minutes.</div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add slot</button>
+        </form>
+    </div>
+</div>
+
+<h3 class="mt-4">Doctors</h3>
+@if (!Model.DoctorList.Any())
+{
+    <p>No doctors yet.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead><tr><th>Name</th><th>Practice</th><th>Location</th><th>Specialist</th><th>Menopause-trained</th></tr></thead>
+        <tbody>
+            @foreach (var d in Model.DoctorList)
+            {
+                <tr>
+                    <td>@d.FullName</td>
+                    <td>@d.Practice</td>
+                    <td>@d.Location</td>
+                    <td>@(d.IsSpecialist ? "Yes" : "No")</td>
+                    <td>@(d.IsMenopauseTrained ? "Yes" : "No")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h3 class="mt-4">Upcoming slots</h3>
+@if (!Model.SlotList.Any())
+{
+    <p>No upcoming slots.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead><tr><th>Doctor</th><th>Start</th><th>End</th><th>Status</th></tr></thead>
+        <tbody>
+            @foreach (var s in Model.SlotList)
+            {
+                <tr>
+                    <td>@s.DoctorName</td>
+                    <td>@s.StartsAt.ToLocalTime().ToString("ddd d MMM yyyy HH:mm")</td>
+                    <td>@s.EndsAt.ToLocalTime().ToString("HH:mm")</td>
+                    <td>@(s.IsBooked ? "Booked" : "Free")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

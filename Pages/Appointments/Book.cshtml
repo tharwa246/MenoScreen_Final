@@ -1,0 +1,54 @@
+﻿@page "{patientId:int}"
+@model MenoScreen.Pages.Appointments.BookModel
+@{
+    ViewData["Title"] = "Book appointment";
+}
+
+<h1>Book an appointment for @Model.Patient.FullName</h1>
+
+@if (Model.Message != null)
+{
+    <div class="alert alert-danger">@Model.Message</div>
+}
+
+@if (Model.SpecialistsOnly)
+{
+    <div class="alert alert-warning">
+        Her latest screening is Complex, so only specialists are shown.
+    </div>
+}
+
+@if (!Model.Slots.Any())
+{
+    <p>No open slots. Ask an admin to add some on the Doctors page.</p>
+}
+else
+{
+    <form method="post">
+        <table class="table table-striped">
+            <thead>
+                <tr><th></th><th>When</th><th>Doctor</th><th>Practice</th><th>Specialist</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Slots)
+                {
+                    <tr>
+                        <td><input type="radio" name="slotId" value="@s.Id" required /></td>
+                        <td>@s.StartsAt.ToLocalTime().ToString("ddd d MMM yyyy HH:mm")</td>
+                        <td>@s.Doctor.FullName</td>
+                        <td>@s.Doctor.Practice</td>
+                        <td>@(s.Doctor.IsSpecialist ? "Yes" : "No")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="mb-3">
+            <label class="form-label" for="note">Note (optional)</label>
+            <input id="note" name="note" class="form-control" maxlength="300" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Book</button>
+        <a asp-page="/Patients/Index" class="btn btn-secondary">Cancel</a>
+    </form>
+}
