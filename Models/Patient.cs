@@ -29,5 +29,15 @@ public class Patient
     public DateTime? ConsentRecordedAt { get; set; }
     public string? ConsentRecordedBy { get; set; }
 
+    // PATIENT PORTAL
+    // UserId (above) links her to her login. Before her first sign-in her clinician gives her
+    // a one-time setup code. We store only a scrambled "hash" of that code, never the code
+    // itself, so even someone reading the database can't use it.
+    [MaxLength(64)]
+    public string? PortalSetupCodeHash { get; set; }
+    public DateTime? PortalSetupCodeExpiresAt { get; set; }
+    public int PortalSetupFailedAttempts { get; set; }
+
     public List<Screening> Screenings { get; set; } = new();
+    public List<WeeklyCheckIn> CheckIns { get; set; } = new();
 }

@@ -6,6 +6,7 @@
     // (Hiding links is just for tidiness; the real protection is the policies in Program.cs.)
     bool isAdmin = User.IsInRole("Admin");
     bool isClinician = User.IsInRole("Clinician");
+    bool isPatient = User.IsInRole("Patient");
     // Pages like the patient self-screen set ViewData["HideNav"] = true
     bool hideNav = ViewData["HideNav"] as bool? ?? false;
     // The clinic this clinician works at, shown in a banner on every page
@@ -55,6 +56,10 @@
                             @if (isClinician || isAdmin)
                             {
                                 <li class="nav-item"><a class="nav-link @Active("/Analytics")" asp-area="" asp-page="/Analytics/Index">Analytics</a></li>
+                            }
+                            @if (isPatient)
+                            {
+                                <li class="nav-item"><a class="nav-link @Active("/Portal")" asp-area="" asp-page="/Portal/Index">My health</a></li>
                             }
                             @if (isAdmin)
                             {

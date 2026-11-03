@@ -50,6 +50,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("ClinicianOnly", policy => policy.RequireRole("Clinician"));
     // Analytics is useful to both the clinic admin and clinicians
     options.AddPolicy("StaffOnly", policy => policy.RequireRole("Admin", "Clinician"));
+    // The patient portal: only patients, and each patient only sees her own data
+    options.AddPolicy("PatientOnly", policy => policy.RequireRole("Patient"));
 });
 
 builder.Services.AddRazorPages(options =>
@@ -59,6 +61,9 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Patients", "ClinicianOnly");
     options.Conventions.AuthorizeFolder("/Screenings", "ClinicianOnly");
     options.Conventions.AuthorizeFolder("/Analytics", "StaffOnly");
+    options.Conventions.AuthorizeFolder("/Portal", "PatientOnly");
+    // The setup page must be open: she isn't signed in yet when she uses it
+    options.Conventions.AllowAnonymousToPage("/Portal/Setup");
     // Clinician accounts are created by an admin, not by anyone off the internet
     options.Conventions.AuthorizeAreaPage("Identity", "/Account/Register", "AdminOnly");
     // /SelfScreen stays public on purpose: patients open it from a QR code,
@@ -77,6 +82,7 @@ builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<InviteService>();
 builder.Services.AddScoped<AnalyticsService>();
 builder.Services.AddScoped<ClinicScopeService>();
+builder.Services.AddScoped<PortalService>();
 // AI clinician assistant: the provider's address, model and key all come from
 // user-secrets (see SETUP.md), so none of them are stored in the code or in git.
 builder.Services.AddHttpClient<ClinicianAssistantService>(client =>

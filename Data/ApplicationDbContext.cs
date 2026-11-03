@@ -20,6 +20,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<Clinic> Clinics => Set<Clinic>();
     public DbSet<StaffProfile> StaffProfiles => Set<StaffProfile>();
+    public DbSet<WeeklyCheckIn> WeeklyCheckIns => Set<WeeklyCheckIn>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -46,6 +47,15 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // The audit log is read newest-first
         builder.Entity<AuditLog>()
             .HasIndex(a => a.At);
+
+        // One portal login belongs to exactly one patient
+        builder.Entity<Patient>()
+            .HasIndex(p => p.UserId)
+            .IsUnique();
+
+        // Her check-ins are always read in date order
+        builder.Entity<WeeklyCheckIn>()
+            .HasIndex(c => new { c.PatientId, c.CheckedInAt });
 
         // Deleting a clinic must never silently delete its patients
         builder.Entity<Patient>()

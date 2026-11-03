@@ -145,6 +145,16 @@ namespace MenoScreen.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<DateTime?>("PortalSetupCodeExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PortalSetupCodeHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("PortalSetupFailedAttempts")
+                        .HasColumnType("integer");
+
                     b.Property<string>("PreferredLanguage")
                         .IsRequired()
                         .HasMaxLength(5)
@@ -156,6 +166,9 @@ namespace MenoScreen.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClinicId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("Patients");
                 });
@@ -334,6 +347,57 @@ namespace MenoScreen.Migrations
                     b.HasIndex("ClinicId");
 
                     b.ToTable("StaffProfiles");
+                });
+
+            modelBuilder.Entity("MenoScreen.Models.WeeklyCheckIn", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CheckedInAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CognitiveMood")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly?>("HrtStartedOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("HrtStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("MusculoskeletalEnergy")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("QualityOfLife")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UrogenitalSexual")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("VasomotorSleep")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("WantsContact")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId", "CheckedInAt");
+
+                    b.ToTable("WeeklyCheckIns");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -617,6 +681,17 @@ namespace MenoScreen.Migrations
                     b.Navigation("Clinic");
                 });
 
+            modelBuilder.Entity("MenoScreen.Models.WeeklyCheckIn", b =>
+                {
+                    b.HasOne("MenoScreen.Models.Patient", "Patient")
+                        .WithMany("CheckIns")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -675,6 +750,8 @@ namespace MenoScreen.Migrations
 
             modelBuilder.Entity("MenoScreen.Models.Patient", b =>
                 {
+                    b.Navigation("CheckIns");
+
                     b.Navigation("Screenings");
                 });
 

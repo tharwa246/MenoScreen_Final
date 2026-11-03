@@ -5,8 +5,10 @@ namespace MenoScreen.Pages;
 
 public class IndexModel : PageModel
 {
-    public void OnGet()
+    public IActionResult OnGet()
     {
-
+        // Patients have their own home: the portal
+        if (User.IsInRole("Patient")) return RedirectToPage("/Portal/Index");
+        return Page();
     }
 }

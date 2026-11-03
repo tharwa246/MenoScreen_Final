@@ -1,0 +1,20 @@
+@page
+@model MenoScreen.Pages.Portal.IndexModel
+@{
+    ViewData["Title"] = "My health";
+}
+
+@if (Model.Me == null)
+{
+    <div class="empty-state mt-4">
+        <h1>Your portal is paused</h1>
+        <p>Please speak to your clinic.</p>
+    </div>
+}
+else
+{
+    <section class="pt-4">
+        <h1>Hello, @Model.FirstName.</h1>
+        <p class="lead-quiet">Your account is set up. Your results and weekly check-ins will appear here.</p>
+    </section>
+}

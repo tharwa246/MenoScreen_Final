@@ -16,7 +16,7 @@
 
     <section class="login-card" aria-labelledby="login-title">
         <h1 id="login-title">Sign in</h1>
-        <p class="text-secondary">For clinicians and clinic admins.</p>
+        <p class="text-secondary">For clinicians, clinic admins and patients.</p>
 
         <form method="post" asp-route-returnUrl="@Model.ReturnUrl" novalidate>
             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
@@ -42,8 +42,11 @@
         </form>
 
         <p class="login-help">
-            Forgot your password or need an account? Ask your clinic admin.
+            Forgot your password or need an account? Ask your clinic.
             Accounts are created by the clinic, not by sign-up.
+        </p>
+        <p class="login-help">
+            Patient with a setup code? <a asp-area="" asp-page="/Portal/Setup">Set up your account</a>.
         </p>
     </section>
 </div>

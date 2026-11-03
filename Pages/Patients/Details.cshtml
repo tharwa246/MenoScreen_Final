@@ -40,6 +40,39 @@
     </div>
 }
 
+@if (Model.Patient.ConsentGiven)
+{
+    <section class="panel mb-4" aria-labelledby="portal-title">
+        <h2 id="portal-title">Patient portal</h2>
+
+        @if (Model.NewSetupCode != null)
+        {
+            <div class="portal-code" role="status">
+                <p class="mb-2">Give her these now. The code is shown <strong>only once</strong> and works for 7 days.</p>
+                <p class="mb-1">Username: <strong>@Model.PortalUsername</strong></p>
+                <p class="mb-2">Setup code: <strong class="portal-code-value">@Model.NewSetupCode</strong></p>
+                <p class="small mb-0">She opens <strong>@Url.Page("/Portal/Setup", null, null, Request.Scheme)</strong>, enters both, and chooses her own password.</p>
+            </div>
+        }
+
+        @if (Model.PortalUsername == null)
+        {
+            <p class="text-secondary">Let her see her own results and do a short weekly check-in from her phone.</p>
+            <form method="post" asp-page-handler="CreatePortal" asp-route-id="@Model.Patient.Id">
+                <button type="submit" class="btn btn-primary">Create portal access</button>
+            </form>
+        }
+        else
+        {
+            <p class="mb-1">Username: <strong>@Model.PortalUsername</strong></p>
+            <p class="text-secondary small">Lost her code or forgotten her password? A new setup code lets her choose a new password.</p>
+            <form method="post" asp-page-handler="NewSetupCode" asp-route-id="@Model.Patient.Id">
+                <button type="submit" class="btn btn-quiet">New setup code</button>
+            </form>
+        }
+    </section>
+}
+
 <h2 class="mt-2">Screening history</h2>
 @if (!Model.History.Any())
 {
