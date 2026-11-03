@@ -14,6 +14,17 @@
     <div>
         <h1>Clinic analytics</h1>
         <p>@Model.ScopeName. Totals across every screening; no patient names appear on this page.</p>
+        <p class="small mt-2 mb-0">
+            <strong>Only screenings with the patient's consent are counted.</strong>
+            @if (Model.UnsavedCount > 0)
+            {
+                @: @Model.UnsavedCount @(Model.UnsavedCount == 1 ? "screening was" : "screenings were") done without consent and @(Model.UnsavedCount == 1 ? "isn't" : "aren't") included, because nothing from them is stored.
+            }
+            else
+            {
+                @: Screenings done without consent aren't stored, so they never appear here.
+            }
+        </p>
     </div>
 </div>
 

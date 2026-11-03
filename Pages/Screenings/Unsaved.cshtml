@@ -1,0 +1,113 @@
+@page
+@model MenoScreen.Pages.Screenings.UnsavedModel
+@{
+    ViewData["Title"] = "Screen without saving";
+}
+
+<a class="back-link" asp-page="/Screenings/Start">Back to start a screening</a>
+
+<div class="page-head pt-3">
+    <div>
+        <h1>Screen without saving</h1>
+        <p>For when she doesn't want her answers stored. You'll see her result here, and you can give her the handout.</p>
+    </div>
+</div>
+
+<div class="alert alert-warning" role="status">
+    <strong>Not saved.</strong> She hasn't consented, so nothing on this page is stored: no record, no answers, no result.
+    When you leave this page, it's gone.
+</div>
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+@if (Model.Result == null)
+{
+    <form method="post">
+        <div class="panel form-narrow mb-4">
+            <label for="FirstName" class="form-label">Her first name, for the handout greeting (optional, not saved)</label>
+            <input id="FirstName" name="FirstName" value="@Model.FirstName" class="form-control" maxlength="50" autocomplete="off" />
+        </div>
+
+        <partial name="_QuestionFields" model="@(new MenoScreen.Pages.Shared.QuestionFormModel { Questions = Model.Questions, Answers = Model.Answers, TextAnswers = Model.TextAnswers })" />
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg">See her result</button>
+            <a asp-page="/Screenings/Start" class="btn btn-quiet btn-lg">Cancel</a>
+        </div>
+    </form>
+}
+else
+{
+    var s = Model.Result;
+    var bandClass = s.Band.ToLower();
+
+    <section class="result-hero mandi-gradient" style="--band-dot: var(--band-@bandClass)" aria-label="Result">
+        <div>
+            <div class="score-number">@s.MenoLikelihood<small> / 100</small></div>
+            <div class="score-label">MenoLikelihood score</div>
+        </div>
+        <div>
+            <span class="band band-@bandClass">@s.Band</span>
+            @if (s.Band != s.ScoreBand)
+            {
+                <span class="muted-on-gradient ms-2">Score alone: @s.ScoreBand</span>
+            }
+            <p class="message">@Model.Message</p>
+        </div>
+    </section>
+
+    @if (s.Band == "Complex")
+    {
+        <div class="safety-banner" role="alert">
+            <div>
+                <strong>Safety flag: she has existing health conditions</strong>
+                She answered yes to question 23. Refer her to a specialist before any treatment conversation, whatever her score.
+            </div>
+        </div>
+    }
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-8">
+            <section class="panel" aria-labelledby="blocks-title">
+                <h2 id="blocks-title">Where her symptoms are heaviest</h2>
+                @foreach (var b in Model.Blocks.OrderByDescending(b => b.Percent))
+                {
+                    <div class="hbar">
+                        <span>@b.Block</span>
+                        <div class="track" role="img" aria-label="@b.Block: @b.Score of @b.Max">
+                            <div class="fill" style="width: @b.Percent%"></div>
+                        </div>
+                        <span class="num">@b.Score / @b.Max</span>
+                    </div>
+                }
+            </section>
+        </div>
+
+        <div class="col-lg-4">
+            <section class="panel" aria-labelledby="next-title">
+                <h2 id="next-title">Next steps</h2>
+                <form method="post" asp-page-handler="Handout" class="d-grid gap-2 mt-3">
+                    @* Her answers go back with the button, because they were never saved *@
+                    <input type="hidden" name="FirstName" value="@Model.FirstName" />
+                    @foreach (var a in Model.Answers)
+                    {
+                        <input type="hidden" name="Answers[@a.Key]" value="@a.Value" />
+                    }
+                    @foreach (var t in Model.TextAnswers)
+                    {
+                        <input type="hidden" name="TextAnswers[@t.Key]" value="@t.Value" />
+                    }
+                    <button type="submit" class="btn btn-primary">Download her handout (PDF)</button>
+                </form>
+                <div class="d-grid gap-2 mt-2">
+                    <button type="button" class="btn btn-quiet" onclick="window.print()">Print this page</button>
+                    <a asp-page="/Screenings/Unsaved" class="btn btn-quiet">Screen someone else</a>
+                </div>
+                <p class="small text-secondary mt-3 mb-0">If she changes her mind and consents, add her as a patient and screen her again so it's saved.</p>
+            </section>
+        </div>
+    </div>
+}

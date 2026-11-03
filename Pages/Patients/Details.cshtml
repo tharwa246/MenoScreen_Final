@@ -33,8 +33,9 @@
     <div class="panel panel-quiet mb-4">
         <h2>Consent not recorded</h2>
         <p>Ask her whether she agrees to her answers being recorded and used for her care. You can't screen her until she does.</p>
-        <form method="post" asp-page-handler="Consent" asp-route-id="@Model.Patient.Id">
+        <form method="post" asp-page-handler="Consent" asp-route-id="@Model.Patient.Id" class="d-flex flex-wrap gap-2">
             <button type="submit" class="btn btn-primary">She agrees: record consent</button>
+            <a asp-page="/Screenings/Unsaved" class="btn btn-quiet">She says no: screen without saving</a>
         </form>
     </div>
 }

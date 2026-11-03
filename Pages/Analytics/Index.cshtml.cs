@@ -28,6 +28,9 @@ public class IndexModel : PageModel
     public string ScopeName { get; set; } = "All clinics";
     public bool IsAdmin { get; set; }
 
+    // Screenings done without consent: not stored, so not in any figure on this page
+    public int UnsavedCount { get; set; }
+
     public async Task<IActionResult> OnGetAsync()
     {
         IsAdmin = User.IsInRole("Admin");
@@ -50,6 +53,7 @@ public class IndexModel : PageModel
         }
 
         Summary = await _analytics.GetSummaryAsync(ClinicId);
+        UnsavedCount = await _analytics.CountUnsavedScreeningsAsync(ClinicId);
 
         // Tells the banner at the top of the page which clinic is being viewed
         ViewData["ViewingClinic"] = ScopeName;

@@ -125,4 +125,20 @@ public class AnalyticsService
                 mine.Count(s => s.Band == "Complex"));
         }).ToList();
     }
+
+    // HOW MANY SCREENINGS WERE DONE WITHOUT CONSENT (and so aren't in the figures above)?
+    // Nothing from those screenings is stored, but the audit log notes THAT one happened,
+    // and who ran it. So we count those notes, and work out the clinic from the clinician.
+    public async Task<int> CountUnsavedScreeningsAsync(int? clinicId)
+    {
+        var notes = _db.AuditLogs.Where(a => a.Action == "UnsavedScreening");
+
+        if (clinicId != null)
+        {
+            var clinicStaff = _db.StaffProfiles.Where(s => s.ClinicId == clinicId).Select(s => s.UserId);
+            notes = notes.Where(a => a.UserId != null && clinicStaff.Contains(a.UserId));
+        }
+
+        return await notes.CountAsync();
+    }
 }
