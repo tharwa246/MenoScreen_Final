@@ -79,7 +79,7 @@ public class LoginModel : PageModel
         if (result.IsLockedOut)
         {
             ModelState.AddModelError(string.Empty,
-                "Too many wrong passwords. This account is locked for a few minutes. Try again later, or ask your clinic admin.");
+                "This account is locked. After too many wrong passwords that lasts a few minutes; if an admin has disabled the account, ask them to enable it.");
             return Page();
         }
 
