@@ -6,7 +6,11 @@ using QuestPDF.Infrastructure;
 
 namespace MenoScreen.Services;
 
-// THE PDFs: the clinician summary and the patient handout.
+// Her portal login, printed on her page of the pack. Never a password: a one-time setup
+// code she uses to choose her own password.
+public record PortalLogin(string Username, string SetupCode, string SetupUrl);
+
+// THE PDFs: the patient page, the clinician summary, and the "screening pack" (both in one).
 // They're designed to look like the Result page: the same JoinMandi gradient band, fonts,
 // band colours and "symptom blanket" patches, so the app and its paperwork feel like one product.
 public class DocumentService
@@ -107,10 +111,34 @@ public class DocumentService
     };
 
     // =====================================================================================
-    // CLINICIAN SUMMARY (same layout as the Result page)
+    // THE DOCUMENTS YOU CAN DOWNLOAD
+    // Each page is drawn by one "Compose..." method below, so a page looks the same
+    // whether it's printed on its own or as part of the pack.
+    // =====================================================================================
+
+    // Clinician summary on its own
+    public byte[] BuildClinicianSummary(Screening s) =>
+        Document.Create(doc => ComposeClinicianPage(doc, s)).GeneratePdf();
+
+    // Her page on its own (also used by "screen without saving", which has no portal login)
+    public byte[] BuildPatientHandout(Screening s, PortalLogin? portal = null) =>
+        Document.Create(doc => ComposePatientPage(doc, s, portal)).GeneratePdf();
+
+    // THE SCREENING PACK: everything in one PDF.
+    // Page 1 is hers to take home: her result, JoinMandi, and (if given) her portal login.
+    // Page 2 is the clinician summary for her file.
+    public byte[] BuildScreeningPack(Screening s, PortalLogin? portal) =>
+        Document.Create(doc =>
+        {
+            ComposePatientPage(doc, s, portal);
+            ComposeClinicianPage(doc, s);
+        }).GeneratePdf();
+
+    // =====================================================================================
+    // CLINICIAN SUMMARY PAGE (same layout as the Result page)
     // The screening must be loaded with Patient, and Answers including each Question.
     // =====================================================================================
-    public byte[] BuildClinicianSummary(Screening s)
+    private static void ComposeClinicianPage(IDocumentContainer doc, Screening s)
     {
         var blocks = ScoringService.BlockBreakdown(s.Answers);
         var patchRows = s.Answers
@@ -123,212 +151,277 @@ public class DocumentService
             .OrderBy(a => a.Question.SortOrder)
             .ToList();
         var summary = SummaryText.GetValueOrDefault(s.Band, string.Empty);
-               (string Fill, string Ink) band = BandColours.GetValueOrDefault(s.Band, (Muted, "#FFFFFF"));
+        (string Fill, string Ink) band = BandColours.GetValueOrDefault(s.Band, (Muted, "#FFFFFF"));
         string how = s.Source == ScreeningSources.SelfScreen ? "QR self-screen" : "with a clinician";
 
-        return Document.Create(container =>
+        doc.Page(page =>
         {
-            container.Page(page =>
+            page.Size(PageSizes.A4);
+            page.Margin(0);
+            page.PageColor(Cream);
+            page.DefaultTextStyle(t => (BodyFont == null ? t : t.FontFamily(BodyFont)).FontSize(10).FontColor(Text).LineHeight(1.35f));
+
+            // 1. Gradient band, like the top of joinmandi.com
+            page.Header().Element(h => GradientBand(h, "Clinician summary"));
+
+            page.Content().PaddingHorizontal(36).PaddingVertical(24).Column(col =>
             {
-                page.Size(PageSizes.A4);
-                page.Margin(0);
-                page.PageColor(Cream);
-                page.DefaultTextStyle(t => (BodyFont == null ? t : t.FontFamily(BodyFont)).FontSize(10).FontColor(Text).LineHeight(1.35f));
+                col.Spacing(16);
 
-                // 1. Gradient band, like the top of joinmandi.com
-                page.Header().Element(h => GradientBand(h, "Clinician summary"));
-
-                page.Content().PaddingHorizontal(36).PaddingVertical(24).Column(col =>
+                // 2. Who and when
+                col.Item().Column(c =>
                 {
-                    col.Spacing(16);
+                    Display(c.Item().Text($"Result for {s.Patient.FullName}")).FontSize(22).FontColor(Brown);
+                    c.Item().Text($"Screened {s.ScreenedAt:d MMM yyyy, HH:mm} (UTC), {how}.").FontColor(Muted);
+                });
 
-                    // 2. Who and when
-                    col.Item().Column(c =>
+                // 3. Score card: big number left, band + message right
+                col.Item().Background(CreamLight).Border(1).BorderColor(Line).Padding(18).Row(row =>
+                {
+                    row.Spacing(20);
+                    row.ConstantItem(120).Column(c =>
                     {
-                        Display(c.Item().Text($"Result for {s.Patient.FullName}")).FontSize(22).FontColor(Brown);
-                        c.Item().Text($"Screened {s.ScreenedAt:d MMM yyyy, HH:mm} (UTC), {how}.").FontColor(Muted);
-                    });
-
-                    // 3. Score card: big number left, band + message right
-                    col.Item().Background(CreamLight).Border(1).BorderColor(Line).Padding(18).Row(row =>
-                    {
-                        row.Spacing(20);
-                        row.ConstantItem(120).Column(c =>
+                        c.Item().Text(t =>
                         {
-                            c.Item().Text(t =>
-                            {
-                                Display(t.Span(s.MenoLikelihood.ToString())).FontSize(40).FontColor(Terracotta);
-                                t.Span(" / 100").FontSize(12).FontColor(Muted);
-                            });
-                            c.Item().Text("MenoLikelihood score").FontSize(8.5f).FontColor(Muted);
+                            Display(t.Span(s.MenoLikelihood.ToString())).FontSize(40).FontColor(Terracotta);
+                            t.Span(" / 100").FontSize(12).FontColor(Muted);
                         });
-                        row.RelativeItem().Column(c =>
-                        {
-                            c.Spacing(6);
-                            c.Item().Row(r =>
-                            {
-                                r.AutoItem().Background(band.Fill).PaddingVertical(3).PaddingHorizontal(10)
-                                    .Text(s.Band).Bold().FontSize(10).FontColor(band.Ink);
-                                if (s.Band != s.ScoreBand)
-                                    r.AutoItem().PaddingLeft(8).AlignMiddle().Text($"Score alone: {s.ScoreBand}").FontSize(9).FontColor(Muted);
-                            });
-                            c.Item().Text($"Raw score {s.RawScore} of {blocks.Sum(b => b.Max)}.").FontSize(9).FontColor(Muted);
-                        });
+                        c.Item().Text("MenoLikelihood score").FontSize(8.5f).FontColor(Muted);
                     });
-
-                    // 4. Safety flag, only when Q23 was answered Yes
-                    if (s.Band == "Complex")
+                    row.RelativeItem().Column(c =>
                     {
-                        col.Item().Background("#F1E7F4").Border(1).BorderColor("#D8C3E0").Padding(12).Text(t =>
+                        c.Spacing(6);
+                        c.Item().Row(r =>
                         {
-                            t.Span("Safety flag: existing health conditions. ").Bold().FontColor("#3F2449");
-                            t.Span("She answered yes to question 23. Refer to a specialist before any treatment conversation, whatever her score.").FontColor("#3F2449");
+                            r.AutoItem().Background(band.Fill).PaddingVertical(3).PaddingHorizontal(10)
+                                .Text(s.Band).Bold().FontSize(10).FontColor(band.Ink);
+                            if (s.Band != s.ScoreBand)
+                                r.AutoItem().PaddingLeft(8).AlignMiddle().Text($"Score alone: {s.ScoreBand}").FontSize(9).FontColor(Muted);
+                        });
+                        c.Item().Text($"Raw score {s.RawScore} of {blocks.Sum(b => b.Max)}.").FontSize(9).FontColor(Muted);
+                    });
+                });
+
+                // 4. Safety flag, only when Q23 was answered Yes
+                if (s.Band == "Complex")
+                {
+                    col.Item().Background("#F1E7F4").Border(1).BorderColor("#D8C3E0").Padding(12).Text(t =>
+                    {
+                        t.Span("Safety flag: existing health conditions. ").Bold().FontColor("#3F2449");
+                        t.Span("She answered yes to question 23. Refer to a specialist before any treatment conversation, whatever her score.").FontColor("#3F2449");
+                    });
+                }
+
+                // 5. The symptom blanket: one coloured patch per answer
+                col.Item().Background(CreamLight).Border(1).BorderColor(Line).Padding(18).Column(c =>
+                {
+                    c.Spacing(9);
+                    Display(c.Item().Text("Her symptom blanket")).FontSize(15).FontColor(Brown);
+                    c.Item().PaddingBottom(4).Text("Each patch is one answer. The darker the patch, the more that symptom is affecting her.")
+                        .FontSize(9).FontColor(Muted);
+
+                    foreach (var rowAnswers in patchRows)
+                    {
+                        var total = blocks.First(b => b.Block == rowAnswers.Key);
+                        c.Item().Row(r =>
+                        {
+                            r.ConstantItem(160).AlignMiddle().Text(rowAnswers.Key).Bold().FontColor(Brown);
+                            r.RelativeItem().Row(p =>
+                            {
+                                p.Spacing(4);
+                                foreach (var a in rowAnswers)
+                                {
+                                    int v = Math.Clamp(a.Value ?? 0, 0, 3);
+                                    p.ConstantItem(22).Height(22).Background(SeverityFill[v])
+                                        .Border(0.5f).BorderColor("#CBB8A6")
+                                        .AlignCenter().AlignMiddle()
+                                        .Text(v.ToString()).FontSize(8).Bold().FontColor(SeverityInk[v]);
+                                }
+                            });
+                            r.ConstantItem(70).AlignRight().AlignMiddle().Text($"{total.Score} / {total.Max}").FontColor(Muted);
                         });
                     }
 
-                    // 5. The symptom blanket: one coloured patch per answer
-                    col.Item().Background(CreamLight).Border(1).BorderColor(Line).Padding(18).Column(c =>
+                    // Key
+                    c.Item().PaddingTop(6).Row(r =>
                     {
-                        c.Spacing(9);
-                        Display(c.Item().Text("Her symptom blanket")).FontSize(15).FontColor(Brown);
-                        c.Item().PaddingBottom(4).Text("Each patch is one answer. The darker the patch, the more that symptom is affecting her.")
-                            .FontSize(9).FontColor(Muted);
-
-                        foreach (var rowAnswers in patchRows)
+                        r.Spacing(14);
+                        for (int i = 0; i <= 3; i++)
                         {
-                            var total = blocks.First(b => b.Block == rowAnswers.Key);
-                            c.Item().Row(r =>
+                            int level = i;
+                            r.AutoItem().Row(k =>
                             {
-                                r.ConstantItem(160).AlignMiddle().Text(rowAnswers.Key).Bold().FontColor(Brown);
-                                r.RelativeItem().Row(p =>
-                                {
-                                    p.Spacing(4);
-                                    foreach (var a in rowAnswers)
-                                    {
-                                        int v = Math.Clamp(a.Value ?? 0, 0, 3);
-                                        p.ConstantItem(22).Height(22).Background(SeverityFill[v])
-                                            .Border(0.5f).BorderColor("#CBB8A6")
-                                            .AlignCenter().AlignMiddle()
-                                            .Text(v.ToString()).FontSize(8).Bold().FontColor(SeverityInk[v]);
-                                    }
-                                });
-                                r.ConstantItem(70).AlignRight().AlignMiddle().Text($"{total.Score} / {total.Max}").FontColor(Muted);
+                                k.ConstantItem(10).Height(10).Background(SeverityFill[level]).Border(0.5f).BorderColor("#CBB8A6");
+                                k.AutoItem().PaddingLeft(4).Text($"{level} {RatingLabels[level]}").FontSize(8).FontColor(Muted);
                             });
                         }
-
-                        // Key
-                        c.Item().PaddingTop(6).Row(r =>
-                        {
-                            r.Spacing(14);
-                            for (int i = 0; i <= 3; i++)
-                            {
-                                int level = i;
-                                r.AutoItem().Row(k =>
-                                {
-                                    k.ConstantItem(10).Height(10).Background(SeverityFill[level]).Border(0.5f).BorderColor("#CBB8A6");
-                                    k.AutoItem().PaddingLeft(4).Text($"{level} {RatingLabels[level]}").FontSize(8).FontColor(Muted);
-                                });
-                            }
-                        });
-                    });
-
-                    // 6. Two columns: about her | recommended action
-                    col.Item().Row(row =>
-                    {
-                        row.Spacing(16);
-
-                        row.RelativeItem().Background(CreamLight).Border(1).BorderColor(Line).Padding(16).Column(c =>
-                        {
-                            c.Spacing(6);
-                            Display(c.Item().Text("About her")).FontSize(13).FontColor(Brown);
-                            foreach (var a in context)
-                            {
-                                c.Item().BorderBottom(0.5f).BorderColor(Line).PaddingBottom(5).Row(r =>
-                                {
-                                    r.RelativeItem().Text(a.Question.Text).FontSize(9);
-                                    r.ConstantItem(90).AlignRight().Text(a.TextValue ?? "-").Bold().FontSize(9).FontColor(Brown);
-                                });
-                            }
-                        });
-
-                        row.RelativeItem().Background(Sand).Padding(16).Column(c =>
-                        {
-                            c.Spacing(6);
-                            Display(c.Item().Text("Recommended action")).FontSize(13).FontColor(Brown);
-                            c.Item().Text(summary);
-                        });
                     });
                 });
 
-                page.Footer().PaddingHorizontal(36).PaddingBottom(18).Row(r =>
+                // 6. Two columns: about her | recommended action
+                col.Item().Row(row =>
                 {
-                    r.RelativeItem().Text("For clinician records only. Prototype: wording awaiting medical review.").FontSize(8).FontColor(Muted);
-                    r.AutoItem().Text(t =>
+                    row.Spacing(16);
+
+                    row.RelativeItem().Background(CreamLight).Border(1).BorderColor(Line).Padding(16).Column(c =>
                     {
-                        t.Span("Page ").FontSize(8).FontColor(Muted);
-                        t.CurrentPageNumber().FontSize(8).FontColor(Muted);
+                        c.Spacing(6);
+                        Display(c.Item().Text("About her")).FontSize(13).FontColor(Brown);
+                        foreach (var a in context)
+                        {
+                            c.Item().BorderBottom(0.5f).BorderColor(Line).PaddingBottom(5).Row(r =>
+                            {
+                                r.RelativeItem().Text(a.Question.Text).FontSize(9);
+                                r.ConstantItem(90).AlignRight().Text(a.TextValue ?? "-").Bold().FontSize(9).FontColor(Brown);
+                            });
+                        }
+                    });
+
+                    row.RelativeItem().Background(Sand).Padding(16).Column(c =>
+                    {
+                        c.Spacing(6);
+                        Display(c.Item().Text("Recommended action")).FontSize(13).FontColor(Brown);
+                        c.Item().Text(summary);
                     });
                 });
             });
-        }).GeneratePdf();
+
+            page.Footer().PaddingHorizontal(36).PaddingBottom(18).Row(r =>
+            {
+                r.RelativeItem().Text("For clinician records only. Prototype: wording awaiting medical review.").FontSize(8).FontColor(Muted);
+                r.AutoItem().Text(t =>
+                {
+                    t.Span("Page ").FontSize(8).FontColor(Muted);
+                    t.CurrentPageNumber().FontSize(8).FontColor(Muted);
+                });
+            });
+        });
     }
 
     // =====================================================================================
-    // PATIENT HANDOUT (only needs the screening with its Patient loaded)
+    // HER PAGE: her result, her portal login (if given) and JoinMandi
+    // Needs the screening with its Patient, and Answers including each Question.
     // =====================================================================================
-    public byte[] BuildPatientHandout(Screening s)
+    private static void ComposePatientPage(IDocumentContainer doc, Screening s, PortalLogin? portal)
     {
         var text = HandoutText.GetValueOrDefault(s.Band, string.Empty);
+        (string Fill, string Ink) band = BandColours.GetValueOrDefault(s.Band, (Muted, "#FFFFFF"));
 
-        // QR code pointing at the JoinMandi site (no band or score in the link)
-        using var generator = new QRCodeGenerator();
-        var qrData = generator.CreateQrCode(LandingUrl, QRCodeGenerator.ECCLevel.Q);
-        byte[] qrPng = new PngByteQRCode(qrData).GetGraphic(10);
+        // The two symptom areas that affect her most (by percentage of the maximum)
+        var topAreas = ScoringService.BlockBreakdown(s.Answers)
+            .Where(b => b.Score > 0)
+            .OrderByDescending(b => b.Percent)
+            .Take(2)
+            .Select(b => b.Block)
+            .ToList();
 
-        return Document.Create(container =>
+        // QR codes: one to JoinMandi, one to the portal setup page. Neither link contains
+        // her score, band or any health information.
+        byte[] joinMandiQr = QrPng(LandingUrl);
+        byte[]? portalQr = portal == null ? null : QrPng(portal.SetupUrl);
+
+        doc.Page(page =>
         {
-            container.Page(page =>
+            page.Size(PageSizes.A4);
+            page.Margin(0);
+            page.PageColor(Cream);
+            page.DefaultTextStyle(t => (BodyFont == null ? t : t.FontFamily(BodyFont)).FontSize(11).FontColor(Text).LineHeight(1.4f));
+
+            page.Header().Element(h => GradientBand(h, "Your health journey home starts here."));
+
+            page.Content().PaddingHorizontal(44).PaddingVertical(24).Column(col =>
             {
-                page.Size(PageSizes.A4);
-                page.Margin(0);
-                page.PageColor(Cream);
-                page.DefaultTextStyle(t => (BodyFont == null ? t : t.FontFamily(BodyFont)).FontSize(12).FontColor(Text).LineHeight(1.45f));
+                col.Spacing(14);
 
-                page.Header().Element(h => GradientBand(h, "Your health journey home starts here."));
+                Display(col.Item().Text($"Hello {s.Patient.FullName}")).FontSize(22).FontColor(Brown);
+                col.Item().Text(text).FontSize(12);
 
-                page.Content().PaddingHorizontal(48).PaddingVertical(32).Column(col =>
+                // 1. Her result
+                col.Item().Background(CreamLight).Border(1).BorderColor(Line).Padding(16).Row(row =>
                 {
-                    col.Spacing(18);
-
-                    Display(col.Item().Text($"Hello {s.Patient.FullName}")).FontSize(24).FontColor(Brown);
-                    col.Item().Text(text).FontSize(13);
-
-                    // "Your next step" card with the QR code
-                    col.Item().Background(CreamLight).Border(1).BorderColor(Line).Padding(20).Row(row =>
+                    row.Spacing(18);
+                    row.ConstantItem(110).Column(c =>
                     {
-                        row.Spacing(20);
-                        row.ConstantItem(130).Image(qrPng);
-                        row.RelativeItem().AlignMiddle().Column(c =>
+                        c.Item().Text(t =>
                         {
-                            c.Spacing(6);
-                            Display(c.Item().Text("Your next step")).FontSize(16).FontColor(Brown);
-                            c.Item().Text("Scan the code with your phone camera, or visit:");
-                            c.Item().Text("joinmandi.com").Bold().FontSize(14).FontColor(Terracotta);
+                            Display(t.Span(s.MenoLikelihood.ToString())).FontSize(32).FontColor(Terracotta);
+                            t.Span(" / 100").FontSize(11).FontColor(Muted);
                         });
+                        c.Item().Text("Your score today").FontSize(8.5f).FontColor(Muted);
                     });
-
-                    col.Item().PaddingTop(8).Column(c =>
+                    row.RelativeItem().AlignMiddle().Column(c =>
                     {
-                        c.Spacing(4);
-                        Display(c.Item().Text("Talk to Mandi  ·  Khuluma noMandi  ·  Thetha noMandi  ·  Praat met Mandi")).FontSize(12).FontColor(Orange);
-                        c.Item().Text("You are not alone  ·  Awuhleli wedwa  ·  Awukho wedwa  ·  Jy is nie alleen nie").Italic().FontSize(11).FontColor(Muted);
+                        c.Spacing(6);
+                        c.Item().Row(r => r.AutoItem().Background(band.Fill).PaddingVertical(3).PaddingHorizontal(10)
+                            .Text(s.Band).Bold().FontSize(10).FontColor(band.Ink));
+                        if (topAreas.Any())
+                            c.Item().Text($"What affects you most: {string.Join(" and ", topAreas)}.").FontSize(10);
+                        c.Item().Text("Your clinician has gone through this result with you.").FontSize(9).FontColor(Muted);
                     });
                 });
 
-                page.Footer().PaddingHorizontal(48).PaddingBottom(18)
-                    .Text("Prototype: wording awaiting medical review.").FontSize(8).FontColor(Muted);
+                // 2. Her portal login (only when the clinician included it)
+                if (portal != null && portalQr != null)
+                {
+                    col.Item().Background(Sand).Padding(16).Row(row =>
+                    {
+                        row.Spacing(18);
+                        row.ConstantItem(110).Image(portalQr);
+                        row.RelativeItem().AlignMiddle().Column(c =>
+                        {
+                            c.Spacing(4);
+                            Display(c.Item().Text("See your results online")).FontSize(15).FontColor(Brown);
+                            c.Item().Text("Scan the code, or go to:").FontSize(10);
+                            c.Item().Text(portal.SetupUrl).FontSize(8.5f).FontColor(Terracotta);
+                            c.Item().PaddingTop(4).Text(t =>
+                            {
+                                t.Span("Username: ").FontSize(11);
+                                t.Span(portal.Username).Bold().FontSize(12).FontColor(Brown);
+                            });
+                            c.Item().Text(t =>
+                            {
+                                t.Span("Setup code: ").FontSize(11);
+                                t.Span(portal.SetupCode).Bold().FontSize(14).FontColor(Brown);
+                            });
+                            c.Item().PaddingTop(2).Text("The code works once and expires in 7 days. You'll choose your own password. Keep this page private.")
+                                .FontSize(8.5f).FontColor(Muted);
+                        });
+                    });
+                }
+
+                // 3. JoinMandi
+                col.Item().Background(CreamLight).Border(1).BorderColor(Line).Padding(16).Row(row =>
+                {
+                    row.Spacing(18);
+                    row.ConstantItem(110).Image(joinMandiQr);
+                    row.RelativeItem().AlignMiddle().Column(c =>
+                    {
+                        c.Spacing(6);
+                        Display(c.Item().Text("Learn more with Mandi")).FontSize(15).FontColor(Brown);
+                        c.Item().Text("Scan the code with your phone camera, or visit:");
+                        c.Item().Text("joinmandi.com").Bold().FontSize(14).FontColor(Terracotta);
+                    });
+                });
+
+                col.Item().PaddingTop(4).Column(c =>
+                {
+                    c.Spacing(4);
+                    Display(c.Item().Text("Talk to Mandi  ·  Khuluma noMandi  ·  Thetha noMandi  ·  Praat met Mandi")).FontSize(12).FontColor(Orange);
+                    c.Item().Text("You are not alone  ·  Awuhleli wedwa  ·  Awukho wedwa  ·  Jy is nie alleen nie").Italic().FontSize(10).FontColor(Muted);
+                });
             });
-        }).GeneratePdf();
+
+            page.Footer().PaddingHorizontal(44).PaddingBottom(18)
+                .Text("Prototype: wording awaiting medical review.").FontSize(8).FontColor(Muted);
+        });
+    }
+
+    // A QR code as a PNG image
+    private static byte[] QrPng(string text)
+    {
+        using var generator = new QRCodeGenerator();
+        var data = generator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
+        return new PngByteQRCode(data).GetGraphic(10);
     }
 
     // =====================================================================================

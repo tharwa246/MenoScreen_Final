@@ -12,14 +12,17 @@ public class ResultModel : PageModel
     private readonly AuditService _audit;
     private readonly ClinicianAssistantService _assistant;
     private readonly ClinicScopeService _scope;
+    private readonly PortalService _portal;
 
-    public ResultModel(ScreeningService screenings, DocumentService documents, AuditService audit, ClinicianAssistantService assistant, ClinicScopeService scope)
+    public ResultModel(ScreeningService screenings, DocumentService documents, AuditService audit,
+                       ClinicianAssistantService assistant, ClinicScopeService scope, PortalService portal)
     {
         _screenings = screenings;
         _documents = documents;
         _audit = audit;
         _assistant = assistant;
         _scope = scope;
+        _portal = portal;
     }
 
     public Screening Screening { get; set; } = null!;
@@ -95,6 +98,43 @@ public class ResultModel : PageModel
         await _audit.LogAsync("ExportClinicianPdf", "Screening", id);
         var bytes = _documents.BuildClinicianSummary(screening);
         return File(bytes, "application/pdf", $"clinician-summary-{id}.pdf");
+    }
+
+    // "Download her screening pack": ONE PDF. Page 1 is hers (result, JoinMandi and, if ticked,
+    // her portal login), page 2 is the clinician summary for her file.
+    // It's a POST, not a link, because it can create her portal account or a new setup code.
+    public async Task<IActionResult> OnPostPackPdfAsync(int id, bool includePortal)
+    {
+        var screening = await _screenings.LoadFullAsync(id);
+        if (screening == null || await _scope.FindPatientAsync(screening.PatientId) == null) return NotFound();
+
+        PortalLogin? login = null;
+        if (includePortal && screening.Patient.ConsentGiven)
+        {
+            string username;
+            string code;
+            if (screening.Patient.UserId == null)
+            {
+                // First time: make her account (generated username + setup code)
+                (username, code) = await _portal.CreateAccessAsync(screening.Patient);
+                await _audit.LogAsync("CreatePortalAccess", "Patient", screening.PatientId, $"Username {username}");
+            }
+            else
+            {
+                // She already has an account: a fresh code (any older printout stops working)
+                code = await _portal.NewSetupCodeAsync(screening.Patient);
+                username = await _portal.GetUsernameAsync(screening.Patient) ?? string.Empty;
+                await _audit.LogAsync("NewPortalSetupCode", "Patient", screening.PatientId);
+            }
+
+            // The QR code opens the setup page with her username already filled in
+            var setupUrl = Url.Page("/Portal/Setup", pageHandler: null, values: new { u = username }, protocol: Request.Scheme)!;
+            login = new PortalLogin(username, code, setupUrl);
+        }
+
+        await _audit.LogAsync("ExportScreeningPack", "Screening", id);
+        var bytes = _documents.BuildScreeningPack(screening, login);
+        return File(bytes, "application/pdf", $"mandi-screening-pack-{id}.pdf");
     }
 
     public async Task<IActionResult> OnGetHandoutPdfAsync(int id)

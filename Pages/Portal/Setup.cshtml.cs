@@ -43,7 +43,8 @@ public class SetupModel : PageModel
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 
-    public void OnGet() { }
+    // The QR code on her pack opens /Portal/Setup?u=her-username, so she only types the code
+    public void OnGet(string? u) => Input.Username = u ?? string.Empty;
 
     public async Task<IActionResult> OnPostAsync()
     {
