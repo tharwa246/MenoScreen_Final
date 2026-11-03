@@ -2,6 +2,20 @@
 @model MenoScreen.Pages.Portal.IndexModel
 @{
     ViewData["Title"] = "My health";
+
+    // The chart's data, handed to the chart script as JSON: one line per symptom area
+    var chartJson = System.Text.Json.JsonSerializer.Serialize(new
+    {
+        labels = Model.CheckIns.Select(c => c.CheckedInAt.ToString("d MMM")),
+        series = new[]
+        {
+            new { name = "Hot flushes and sleep", values = Model.CheckIns.Select(c => c.VasomotorSleep) },
+            new { name = "Mood and memory", values = Model.CheckIns.Select(c => c.CognitiveMood) },
+            new { name = "Joints and energy", values = Model.CheckIns.Select(c => c.MusculoskeletalEnergy) },
+            new { name = "Bladder and intimacy", values = Model.CheckIns.Select(c => c.UrogenitalSexual) },
+            new { name = "Daily life", values = Model.CheckIns.Select(c => c.QualityOfLife) }
+        }
+    });
 }
 
 @if (Model.Me == null)
@@ -15,6 +29,126 @@ else
 {
     <section class="pt-4">
         <h1>Hello, @Model.FirstName.</h1>
-        <p class="lead-quiet">Your account is set up. Your results and weekly check-ins will appear here.</p>
+        <p class="lead-quiet">This is your own space. Only you can see it.</p>
     </section>
+
+    @if (Model.StatusMessage != null)
+    {
+        <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <section class="panel h-100" aria-labelledby="checkin-title">
+                <h2 id="checkin-title">Weekly check-in</h2>
+                @if (Model.CheckInDue)
+                {
+                    <p>Time for your weekly check-in. It takes about a minute.</p>
+                    <a asp-page="CheckIn" class="btn btn-primary btn-lg">Check in now</a>
+                }
+                else
+                {
+                    <p>Thank you for checking in. Your next one is due from <strong>@Model.NextCheckIn?.ToString("d MMMM")</strong>.</p>
+                    <a asp-page="CheckIn" class="btn btn-quiet">Something changed? Check in again</a>
+                }
+            </section>
+        </div>
+
+        <div class="col-lg-7">
+            <section class="panel h-100" aria-labelledby="latest-title">
+                <h2 id="latest-title">Your latest result</h2>
+                @if (Model.Latest == null)
+                {
+                    <p class="text-secondary mb-0">Your results will appear here after your screening at the clinic.</p>
+                }
+                else
+                {
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+                        <div class="portal-score">@Model.Latest.MenoLikelihood<small> / 100</small></div>
+                        <span class="band band-@Model.Latest.Band.ToLower()">@Model.Latest.Band</span>
+                        <span class="small text-secondary">@Model.Latest.ScreenedAt.ToString("d MMM yyyy")</span>
+                    </div>
+                    <p class="mb-2">@Model.LatestMessage</p>
+                    <a href="https://joinmandi.com" target="_blank" rel="noopener">Learn more at JoinMandi.com</a>
+                }
+            </section>
+        </div>
+    </div>
+
+    <section class="panel mt-4" aria-labelledby="chart-title">
+        <h2 id="chart-title">How you've been feeling</h2>
+        @if (!Model.CheckIns.Any())
+        {
+            <p class="text-secondary mb-0">After your first check-in you'll see your symptoms here. Over the weeks, the chart shows what's getting better or worse.</p>
+        }
+        else
+        {
+            <p class="text-secondary">From your check-ins. 0 means no problem at all, 10 means as bad as it gets.</p>
+            @if (Model.CheckIns.Count == 1)
+            {
+                <p class="small text-secondary">After your next check-in, these dots become lines you can follow.</p>
+            }
+            <div class="portal-chart">
+                <canvas id="symptomChart" role="img" aria-label="Your symptom scores from each check-in"></canvas>
+            </div>
+        }
+    </section>
+
+    @if (Model.Screenings.Count > 1)
+    {
+        <section class="panel mt-4" aria-labelledby="history-title">
+            <h2 id="history-title">Your screenings</h2>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>Date</th><th>Score</th><th>Band</th></tr></thead>
+                    <tbody>
+                        @foreach (var s in Model.Screenings)
+                        {
+                            <tr>
+                                <td>@s.ScreenedAt.ToString("d MMM yyyy")</td>
+                                <td>@s.MenoLikelihood / 100</td>
+                                <td><span class="band band-@s.Band.ToLower()">@s.Band</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+
+    <p class="small text-secondary mt-4">
+        Worried about anything? Please contact your clinic. In an emergency, call 10177 or 112 from a cellphone.
+    </p>
+}
+
+@section Scripts {
+    @if (Model.Me != null && Model.CheckIns.Any())
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <script>
+            const data = @Html.Raw(chartJson);
+            // Mandi palette: one colour per symptom area
+            const colours = ['#C94A2B', '#F2C14E', '#F07B54', '#673C33', '#E8632A'];
+
+            new Chart(document.getElementById('symptomChart'), {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: data.series.map((s, i) => ({
+                        label: s.name,
+                        data: s.values,
+                        borderColor: colours[i],
+                        backgroundColor: colours[i],
+                        tension: 0.3,
+                        pointRadius: 4
+                    }))
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: { y: { min: 0, max: 10, ticks: { stepSize: 2 } } },
+                    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Montserrat' } } } }
+                }
+            });
+        </script>
+    }
 }

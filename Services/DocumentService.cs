@@ -101,7 +101,7 @@ public class DocumentService
 
     // Patient handout wording from section 7 of the brief.
     // Temporary: later this moves into the database so the medical team can edit it.
-    private static readonly Dictionary<string, string> HandoutText = new()
+    public static readonly Dictionary<string, string> HandoutText = new()
     {
         ["Unlikely"] = "Your results today don't show a strong hormonal pattern, but your body knows best. If you notice changes, come back. JoinMandi.com has information to help you understand what to watch for.",
         ["Possible"] = "What you are feeling has a name. Your results today suggest your hormones may be starting to change. This is perimenopause, and there is support available. JoinMandi.com will help you understand what is happening and what your options are.",

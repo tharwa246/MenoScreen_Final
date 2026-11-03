@@ -33,6 +33,9 @@ public class DetailsModel : PageModel
     // Her portal username, if she has portal access
     public string? PortalUsername { get; set; }
 
+    // Her latest weekly check-ins from the portal, newest first
+    public List<WeeklyCheckIn> CheckIns { get; set; } = new();
+
     // A brand-new setup code. TempData shows it ONCE (straight after it's made) and then forgets it.
     [TempData]
     public string? NewSetupCode { get; set; }
@@ -155,6 +158,11 @@ public class DetailsModel : PageModel
 
         Patient = patient;
         PortalUsername = await _portal.GetUsernameAsync(patient);
+        CheckIns = await _db.WeeklyCheckIns
+            .Where(c => c.PatientId == id)
+            .OrderByDescending(c => c.CheckedInAt)
+            .Take(12)
+            .ToListAsync();
         History = await _db.Screenings
             .Where(s => s.PatientId == id)
             .OrderByDescending(s => s.ScreenedAt)

@@ -160,6 +160,36 @@ public class PortalService
     private static string Hash(string code)
     {
         var normal = code.Replace("-", "").Replace(" ", "").ToUpperInvariant();
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normal)));
-    }
-}
+           return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normal)));
+       }
+
+       // ---- HER OWN DATA (pages always pass the id from GetMyPatientAsync, so only hers) ----
+
+       public Task<List<Screening>> GetScreeningsAsync(int patientId) =>
+           _db.Screenings
+               .Where(s => s.PatientId == patientId)
+               .OrderByDescending(s => s.ScreenedAt)
+               .ToListAsync();
+
+       // Oldest first, so the chart reads left to right
+       public Task<List<WeeklyCheckIn>> GetCheckInsAsync(int patientId) =>
+           _db.WeeklyCheckIns
+               .Where(c => c.PatientId == patientId)
+               .OrderBy(c => c.CheckedInAt)
+               .ToListAsync();
+
+       // One check-in a day at most, so a double tap doesn't make two
+       public Task<bool> HasCheckedInTodayAsync(int patientId)
+       {
+           var startOfToday = DateTime.UtcNow.Date;
+           return _db.WeeklyCheckIns.AnyAsync(c => c.PatientId == patientId && c.CheckedInAt >= startOfToday);
+       }
+
+       public async Task SaveCheckInAsync(int patientId, WeeklyCheckIn checkIn)
+       {
+           checkIn.PatientId = patientId;
+           checkIn.CheckedInAt = DateTime.UtcNow;
+           _db.WeeklyCheckIns.Add(checkIn);
+           await _db.SaveChangesAsync();
+       }
+   }
