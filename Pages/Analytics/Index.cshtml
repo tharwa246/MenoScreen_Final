@@ -170,7 +170,8 @@ else
         <script>
             const clinics = @Html.Raw(pieJson);
             const selectedId = @(Model.ClinicId?.ToString() ?? "null");
-            const colours = ['#C94A2B', '#F2C14E', '#7B4A8C', '#5E8C6A', '#DC8248', '#D36475'];
+            // Official Mandi palette (brand guidelines): Terra, Golden, Coral, Deep Brown, Sun, Flame
+            const colours = ['#C94A2B', '#F2C14E', '#F07B54', '#673C33', '#F5A623', '#E8632A'];
 
             new Chart(document.getElementById('clinicPie'), {
                 type: 'pie',
@@ -181,7 +182,7 @@ else
                         backgroundColor: clinics.map((c, i) => colours[i % colours.length]),
                         // The chosen clinic's slice is pulled out a little
                         offset: clinics.map(c => c.id === selectedId ? 18 : 0),
-                        borderColor: '#FFFCF6',
+                        borderColor: '#FDF6EC',   // Warm Cream, so the slices have soft gaps
                         borderWidth: 3
                     }]
                 },

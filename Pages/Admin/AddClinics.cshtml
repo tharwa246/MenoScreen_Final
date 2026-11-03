@@ -1,0 +1,97 @@
+@page
+@model MenoScreen.Pages.Admin.ClinicsModel
+@{
+    ViewData["Title"] = "Clinics";
+}
+
+<a class="back-link" asp-page="AdminHome">Back to admin</a>
+
+<div class="page-head pt-3">
+    <div>
+        <h1>Clinics</h1>
+        <p>Every patient and clinician belongs to one clinic. Clinicians only see their own clinic's patients.</p>
+    </div>
+</div>
+
+@if (Model.StatusMessage != null)
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+
+<section class="panel mb-4" aria-labelledby="add-title">
+    <h2 id="add-title">Add a clinic</h2>
+    <form method="post" asp-page-handler="Add" class="row g-3 align-items-end">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="col-md-5">
+            <label asp-for="Input.Name" class="form-label"></label>
+            <input asp-for="Input.Name" class="form-control" />
+            <span asp-validation-for="Input.Name" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.Area" class="form-label"></label>
+            <input asp-for="Input.Area" class="form-control" />
+            <span asp-validation-for="Input.Area" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Add clinic</button>
+        </div>
+    </form>
+</section>
+
+<section class="panel" aria-labelledby="list-title">
+    <h2 id="list-title">All clinics</h2>
+
+    @if (!Model.Clinics.Any())
+    {
+        <p class="text-secondary mb-0">No clinics yet. Add the first one above.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Name and area (edit and press Save)</th>
+                        <th class="text-end">Patients</th>
+                        <th class="text-end">Staff</th>
+                        <th class="text-end">Remove</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Clinics)
+                    {
+                        <tr>
+                            <td>
+                                <form method="post" asp-page-handler="Save" asp-route-id="@c.Id" class="d-flex flex-wrap gap-2">
+                                    <label class="visually-hidden" for="name-@c.Id">Clinic name</label>
+                                    <input id="name-@c.Id" name="name" value="@c.Name" class="form-control form-control-sm" style="max-width: 17rem" maxlength="100" required />
+                                    <label class="visually-hidden" for="area-@c.Id">Area</label>
+                                    <input id="area-@c.Id" name="area" value="@c.Area" class="form-control form-control-sm" style="max-width: 10rem" maxlength="100" placeholder="Area" />
+                                    <button type="submit" class="btn btn-quiet btn-sm">Save</button>
+                                </form>
+                            </td>
+                            <td class="text-end">@c.Patients</td>
+                            <td class="text-end">@c.Staff</td>
+                            <td class="text-end">
+                                @if (c.Patients == 0)
+                                {
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" onsubmit="return confirm('Delete this clinic? This cannot be undone.');">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="small text-secondary">Has patients</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
