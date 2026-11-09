@@ -190,7 +190,10 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await SeedData.SeedQuestionsAsync(db);
 
-    if (app.Environment.IsDevelopment())
+    // Demo clinics and patients: always on a laptop, and on the live site only while the
+    // hosting setting Seed:DemoData is true (for the showcase). Turn it off for real use.
+
+    if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Seed:DemoData"))
     {
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
         var screenings = scope.ServiceProvider.GetRequiredService<ScreeningService>();
@@ -200,3 +203,4 @@ using (var scope = app.Services.CreateScope())
 // PDF FONTS: load the website's fonts from the Fonts folder so the PDFs match the site
 DocumentService.RegisterFonts(Path.Combine(app.Environment.ContentRootPath, "Fonts"));
 app.Run();
+
