@@ -21,6 +21,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Clinic> Clinics => Set<Clinic>();
     public DbSet<StaffProfile> StaffProfiles => Set<StaffProfile>();
     public DbSet<WeeklyCheckIn> WeeklyCheckIns => Set<WeeklyCheckIn>();
+    public DbSet<Suggestion> Suggestions => Set<Suggestion>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -56,6 +57,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // Her check-ins are always read in date order
         builder.Entity<WeeklyCheckIn>()
             .HasIndex(c => new { c.PatientId, c.CheckedInAt });
+
+        // Tips are always read by area, in display order
+        builder.Entity<Suggestion>()
+            .HasIndex(s => new { s.Area, s.SortOrder });
 
         // Deleting a clinic must never silently delete its patients
         builder.Entity<Patient>()

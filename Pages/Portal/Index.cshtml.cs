@@ -9,9 +9,18 @@ namespace MenoScreen.Pages.Portal;
 public class IndexModel : PageModel
 {
     private readonly PortalService _portal;
+    private readonly ScreeningService _screenings;
+    private readonly SuggestionService _suggestions;
 
-    public IndexModel(PortalService portal) => _portal = portal;
+    public IndexModel(PortalService portal, ScreeningService screenings, SuggestionService suggestions)
+    {
+        _portal = portal;
+        _screenings = screenings;
+        _suggestions = suggestions;
+    }
 
+    // The tips she sees under "Ideas that may help"
+    public List<SuggestionGroup> Suggestions { get; set; } = new();
     public Patient? Me { get; set; }
     public List<Screening> Screenings { get; set; } = new();
     public List<WeeklyCheckIn> CheckIns { get; set; } = new();
@@ -34,5 +43,44 @@ public class IndexModel : PageModel
 
         Screenings = await _portal.GetScreeningsAsync(Me.Id);
         CheckIns = await _portal.GetCheckInsAsync(Me.Id);
+        Suggestions = await _suggestions.ForAsync(await HeaviestAreasAsync());
+    }
+
+    // Her two heaviest symptom areas: from her latest check-in if she has one,
+    // otherwise from her latest screening. Only areas that really bother her count.
+    private async Task<List<string>> HeaviestAreasAsync()
+    {
+        if (CheckIns.Any())
+        {
+            var last = CheckIns[^1];   // check-ins are in date order, so the last one is the newest
+            var scores = new Dictionary<string, int>
+            {
+                ["Vasomotor & Sleep"] = last.VasomotorSleep,
+                ["Cognitive & Mood"] = last.CognitiveMood,
+                ["Musculoskeletal & Energy"] = last.MusculoskeletalEnergy,
+                ["Urogenital & Sexual Health"] = last.UrogenitalSexual,
+                ["Quality of Life Impact"] = last.QualityOfLife
+            };
+            return scores
+                .Where(s => s.Value >= 4)              // 4 or more out of 10
+                .OrderByDescending(s => s.Value)
+                .Take(2)
+                .Select(s => s.Key)
+                .ToList();
+        }
+
+        if (Latest != null)
+        {
+            var full = await _screenings.LoadFullAsync(Latest.Id);
+            if (full != null)
+                return ScoringService.BlockBreakdown(full.Answers)
+                    .Where(b => b.Percent >= 34)       // about a third of the maximum or more
+                    .OrderByDescending(b => b.Percent)
+                    .Take(2)
+                    .Select(b => b.Block)
+                    .ToList();
+        }
+
+        return new();
     }
 }

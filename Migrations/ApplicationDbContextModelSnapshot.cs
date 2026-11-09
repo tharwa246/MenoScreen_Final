@@ -349,6 +349,37 @@ namespace MenoScreen.Migrations
                     b.ToTable("StaffProfiles");
                 });
 
+            modelBuilder.Entity("MenoScreen.Models.Suggestion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Area", "SortOrder");
+
+                    b.ToTable("Suggestions");
+                });
+
             modelBuilder.Entity("MenoScreen.Models.WeeklyCheckIn", b =>
                 {
                     b.Property<int>("Id")

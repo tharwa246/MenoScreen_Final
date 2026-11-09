@@ -94,6 +94,31 @@ else
         }
     </section>
 
+    @if (Model.Suggestions.Any())
+    {
+        <section class="panel mt-4" aria-labelledby="ideas-title">
+            <h2 id="ideas-title">Ideas that may help</h2>
+            <p class="text-secondary">
+                Based on your latest @(Model.CheckIns.Any() ? "check-in" : "screening").
+                These are general self-care ideas, not medical advice. Your clinic can tell you what suits you.
+            </p>
+            <div class="row g-4">
+                @foreach (var group in Model.Suggestions)
+                {
+                    <div class="col-md-6">
+                        <h3 class="h5">@group.Title</h3>
+                        <ul class="mb-0">
+                            @foreach (var tip in group.Tips)
+                            {
+                                <li>@tip</li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
     @if (Model.Screenings.Count > 1)
     {
         <section class="panel mt-4" aria-labelledby="history-title">
