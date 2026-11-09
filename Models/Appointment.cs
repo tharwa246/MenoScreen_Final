@@ -1,7 +1,16 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace MenoScreen.Models;
+//after an appointment time has passed, the doctor marks it as Attended or No-show
+//Doctors only see and change their own appointments.
+//Once an outcome is recorded, it can’t be cancelled or changed, so the history stays.
 
+public enum AppointmentStatus
+{
+    Booked,
+    Attended,
+    NoShow
+}
 public class Appointment
 {
     public int Id { get; set; }
@@ -17,6 +26,7 @@ public class Appointment
 
     [MaxLength(300)]
     public string? Note { get; set; }
-
+    public AppointmentStatus Status { get; set; } = AppointmentStatus.Booked;
+    public DateTime? StatusChangedAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

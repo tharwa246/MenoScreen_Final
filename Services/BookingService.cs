@@ -70,13 +70,46 @@ public class BookingService
         return appointment;
     }
 
-    // Cancelling deletes the appointment, which frees the slot
+    // Only Booked appointments can be cancelled. Attended and no-show records are history.
     public async Task CancelAsync(int appointmentId)
     {
         var appointment = await _db.Appointments.FindAsync(appointmentId)
             ?? throw new InvalidOperationException("Appointment not found.");
 
+        if (appointment.Status != AppointmentStatus.Booked)
+            throw new InvalidOperationException("Only booked appointments can be cancelled.");
+
         _db.Appointments.Remove(appointment);
+        await _db.SaveChangesAsync();
+    }
+
+    public Task MarkAttendedAsync(int appointmentId, string doctorUserId) =>
+        SetOutcomeAsync(appointmentId, doctorUserId, AppointmentStatus.Attended);
+
+    public Task MarkNoShowAsync(int appointmentId, string doctorUserId) =>
+        SetOutcomeAsync(appointmentId, doctorUserId, AppointmentStatus.NoShow);
+
+    // NEW: the method both of the above call
+    private async Task SetOutcomeAsync(int appointmentId, string doctorUserId, AppointmentStatus outcome)
+    {
+        var appointment = await _db.Appointments
+            .Include(a => a.AvailabilitySlot)
+                .ThenInclude(s => s.Doctor)
+            .FirstOrDefaultAsync(a => a.Id == appointmentId)
+            ?? throw new InvalidOperationException("Appointment not found.");
+
+        // A doctor can only change her own appointments
+        if (appointment.AvailabilitySlot.Doctor.UserId != doctorUserId)
+            throw new UnauthorizedAccessException("This appointment belongs to another doctor.");
+
+        if (appointment.Status != AppointmentStatus.Booked)
+            throw new InvalidOperationException("The outcome has already been recorded.");
+
+        if (appointment.AvailabilitySlot.StartsAt > DateTime.UtcNow)
+            throw new InvalidOperationException("You can't record an outcome before the appointment time.");
+
+        appointment.Status = outcome;
+        appointment.StatusChangedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
     }
 

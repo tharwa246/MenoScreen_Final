@@ -18,5 +18,6 @@ public class Question
     public string Block {get;set;}=string.Empty; //example "Cognitive & Mood".
     public string Text {get;set;}=string.Empty;
     public QuestionType Type {get;set;} 
-    public string? Options {get;set;} //patient context questions only. 
+    public string? Options {get;set;} //patient context questions only.
+    public List<QuestionTranslation> Translations { get; set; } = new(); 
 }

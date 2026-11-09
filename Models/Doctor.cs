@@ -5,6 +5,8 @@ namespace MenoScreen.Models;
 public class Doctor
 {
     public int Id { get; set; }
+    // The login account for this doctor. Empty until the admin links one.
+    public string? UserId { get; set; }
 
     [Required, MaxLength(100)]
     public string FullName { get; set; } = string.Empty;

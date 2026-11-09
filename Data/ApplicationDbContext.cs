@@ -15,6 +15,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Doctor> Doctors => Set<Doctor>();
     public DbSet<AvailabilitySlot> AvailabilitySlots => Set<AvailabilitySlot>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<QuestionTranslation> QuestionTranslations => Set<QuestionTranslation>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -26,6 +27,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // One question number per question-set version
         builder.Entity<Question>()
             .HasIndex(q => new { q.QuestionSetVersionId, q.Number })
+            .IsUnique();
+        // One translation per question per language
+        builder.Entity<QuestionTranslation>()
+            .HasIndex(t => new { t.QuestionId, t.Language })
             .IsUnique();
     }
 }

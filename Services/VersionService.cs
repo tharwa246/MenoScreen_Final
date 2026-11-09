@@ -17,11 +17,12 @@ public class VersionService
     public Task<bool> IsLockedAsync(int versionId) =>
         _db.Screenings.AnyAsync(s => s.QuestionSetVersionId == versionId);
 
-    // Copies a version and all its questions into a new inactive draft
+    // Copies a version, its questions and their translations into a new inactive draft
     public async Task<QuestionSetVersion> CloneAsync(int sourceId)
     {
         var source = await _db.QuestionSetVersions
             .Include(v => v.Questions)
+                .ThenInclude(q => q.Translations)
             .FirstOrDefaultAsync(v => v.Id == sourceId)
             ?? throw new InvalidOperationException("Version not found.");
 
@@ -37,7 +38,7 @@ public class VersionService
 
         foreach (var q in source.Questions)
         {
-            copy.Questions.Add(new Question
+            var newQuestion = new Question
             {
                 Number = q.Number,
                 SortOrder = q.SortOrder,
@@ -45,14 +46,26 @@ public class VersionService
                 Text = q.Text,
                 Type = q.Type,
                 Options = q.Options
-            });
+            };
+
+            foreach (var t in q.Translations)
+            {
+                newQuestion.Translations.Add(new QuestionTranslation
+                {
+                    Language = t.Language,
+                    Block = t.Block,
+                    Text = t.Text,
+                    Options = t.Options
+                });
+            }
+
+            copy.Questions.Add(newQuestion);
         }
 
         _db.QuestionSetVersions.Add(copy);
         await _db.SaveChangesAsync();
         return copy;
     }
-
     // Makes one version active and every other version inactive
     public async Task ActivateAsync(int versionId)
     {
