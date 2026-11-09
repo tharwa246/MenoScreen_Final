@@ -42,6 +42,12 @@ builder.Services.AddScoped<VersionService>();
 builder.Services.AddScoped<BookingService>();
 
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await SeedData.SeedQuestionsAsync(db);
+    await TranslationSeed.SeedTranslationsAsync(db);   // NEW
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
