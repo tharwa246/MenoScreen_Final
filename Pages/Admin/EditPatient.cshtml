@@ -1,0 +1,122 @@
+@page "{id:int}"
+@model MenoScreen.Pages.Admin.EditPatientModel
+@using MenoScreen.Models
+@{
+    ViewData["Title"] = "Manage patient";
+}
+
+<a class="back-link" asp-page="Patients">Back to all patients</a>
+
+<div class="page-head pt-3">
+    <div>
+        <h1>@Model.Patient.FullName</h1>
+        <p>
+            @Model.Patient.Clinic.Name ·
+            added @Model.Patient.CreatedAt.ToString("d MMM yyyy") ·
+            @(Model.Patient.ConsentGiven ? "consent recorded" : "consent not recorded") ·
+            portal: @(Model.PortalUsername ?? "no access")
+        </p>
+    </div>
+</div>
+
+@if (Model.StatusMessage != null)
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+
+@* ---- 1. Her details and clinic ---- *@
+<section class="panel mb-4" aria-labelledby="details-title">
+    <h2 id="details-title">Her details</h2>
+    <form method="post" asp-page-handler="Save" asp-route-id="@Model.Patient.Id" class="row g-3 align-items-end">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="col-md-5">
+            <label asp-for="Input.FullName" class="form-label"></label>
+            <input asp-for="Input.FullName" class="form-control" />
+            <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.PreferredLanguage" class="form-label"></label>
+            <select asp-for="Input.PreferredLanguage" class="form-select">
+                @foreach (var lang in MenoScreen.Pages.Admin.EditPatientModel.Languages)
+                {
+                    <option value="@lang.Key">@lang.Value</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.ClinicId" class="form-label"></label>
+            <select asp-for="Input.ClinicId" class="form-select">
+                @foreach (var c in Model.Clinics)
+                {
+                    <option value="@c.Id">@c.Name</option>
+                }
+            </select>
+            <span asp-validation-for="Input.ClinicId" class="text-danger small"></span>
+        </div>
+        <div class="col-12">
+            <p class="small text-secondary mb-2">Moving her to another clinic moves her screenings, check-ins and portal access with her. Her old clinic will no longer see her.</p>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+    </form>
+</section>
+
+@* ---- 2. Her screenings ---- *@
+<section class="panel mb-4" aria-labelledby="screenings-title">
+    <h2 id="screenings-title">Screenings</h2>
+    @if (!Model.History.Any())
+    {
+        <p class="text-secondary mb-0">No screenings yet.</p>
+    }
+    else
+    {
+        <p class="small text-secondary">Delete a screening only if it was captured by mistake (for example, for the wrong patient). Her answers are deleted with it.</p>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Score</th>
+                        <th scope="col">Band</th>
+                        <th scope="col">How</th>
+                        <th scope="col"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.History)
+                    {
+                        <tr>
+                            <td>@s.ScreenedAt.ToString("d MMM yyyy HH:mm")</td>
+                            <td>@s.MenoLikelihood / 100</td>
+                            <td><span class="band band-@s.Band.ToLower()">@s.Band</span></td>
+                            <td>@(s.Source == ScreeningSources.SelfScreen ? "QR self-screen" : "With clinician")</td>
+                            <td class="text-end">
+                                <form method="post" asp-page-handler="DeleteScreening" asp-route-id="@Model.Patient.Id"
+                                      onsubmit="return confirm('Delete this screening and its answers? This cannot be undone.');">
+                                    <input type="hidden" name="screeningId" value="@s.Id" />
+                                    <button type="submit" class="btn btn-link btn-sm text-danger p-0">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@* ---- 3. Delete her record ---- *@
+<section class="panel mb-4" aria-labelledby="delete-title">
+    <h2 id="delete-title">Delete her record</h2>
+    <p class="text-secondary">Deletes her details, every screening and check-in, and her portal login. This cannot be undone. The audit log keeps only her record number.</p>
+    <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Patient.Id">
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="confirmDelete" value="true" id="confirmDelete" />
+            <label class="form-check-label" for="confirmDelete">I understand this permanently deletes her record</label>
+        </div>
+        <button type="submit" class="btn btn-outline-danger">Delete her record</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
