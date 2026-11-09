@@ -22,6 +22,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<StaffProfile> StaffProfiles => Set<StaffProfile>();
     public DbSet<WeeklyCheckIn> WeeklyCheckIns => Set<WeeklyCheckIn>();
     public DbSet<Suggestion> Suggestions => Set<Suggestion>();
+    public DbSet<BandContent> BandContents => Set<BandContent>();
+    public DbSet<GuidelineSection> GuidelineSections => Set<GuidelineSection>();
+    public DbSet<AssistantPrompt> AssistantPrompts => Set<AssistantPrompt>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -61,6 +64,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // Tips are always read by area, in display order
         builder.Entity<Suggestion>()
             .HasIndex(s => new { s.Area, s.SortOrder });
+
+        // Exactly one wording row per band: the database refuses a second "Likely"
+        builder.Entity<BandContent>()
+            .HasIndex(b => b.Band)
+            .IsUnique();
 
         // Deleting a clinic must never silently delete its patients
         builder.Entity<Patient>()

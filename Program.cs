@@ -84,6 +84,7 @@ builder.Services.AddScoped<AnalyticsService>();
 builder.Services.AddScoped<ClinicScopeService>();
 builder.Services.AddScoped<PortalService>();
 builder.Services.AddScoped<SuggestionService>();
+builder.Services.AddScoped<ContentService>();
 // AI clinician assistant: the provider's address, model and key all come from
 // user-secrets (see SETUP.md), so none of them are stored in the code or in git.
 builder.Services.AddHttpClient<ClinicianAssistantService>(client =>
@@ -192,6 +193,8 @@ using (var scope = app.Services.CreateScope())
     await SeedData.SeedQuestionsAsync(db);
     // The starting portal tips (only if there are none yet; admins manage them after that)
     await SuggestionSeedData.SeedAsync(db);
+    // The starting band wording, guideline sections and suggested questions (only if empty)
+    await ClinicalContentSeedData.SeedAsync(db);
 
     // Demo clinics and patients: always on a laptop, and on the live site only while the
     // hosting setting Seed:DemoData is true (for the showcase). Turn it off for real use.

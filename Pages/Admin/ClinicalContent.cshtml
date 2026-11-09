@@ -1,0 +1,173 @@
+@page
+@model MenoScreen.Pages.Admin.ClinicalContentModel
+@{
+    ViewData["Title"] = "Clinical content";
+}
+
+<a class="back-link" asp-page="AdminHome">Back to admin</a>
+
+<div class="page-head pt-3">
+    <div>
+        <h1>Clinical content</h1>
+        <p>The wording for each result band, the guidelines the clinician assistant answers from, and its suggested questions. Changes apply straight away.</p>
+    </div>
+</div>
+
+@if (Model.StatusMessage != null)
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+
+<nav class="mb-4" aria-label="Sections on this page">
+    <a href="#bands" class="me-3">Band wording</a>
+    <a href="#guidelines" class="me-3">Assistant guidelines</a>
+    <a href="#prompts">Suggested questions</a>
+</nav>
+
+@* ================= 1. BAND WORDING ================= *@
+<h2 id="bands" class="mb-3">Band wording</h2>
+<p class="text-secondary">The band names and score ranges are set by the scoring engine. Only the wording is edited here.</p>
+
+@foreach (var b in Model.Bands)
+{
+    <section class="panel mb-4" aria-label="@b.Band wording">
+        <div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2">
+            <h3 class="h4 mb-0"><span class="tag">@b.Band</span></h3>
+            <span class="small text-secondary">Last changed @b.UpdatedAt.ToString("yyyy-MM-dd HH:mm") UTC@(b.UpdatedBy != null ? $" by {b.UpdatedBy}" : "")</span>
+        </div>
+        <form method="post" asp-page-handler="SaveBand" asp-route-id="@b.Id" class="mt-3">
+            <div class="mb-3">
+                <label class="form-label" for="msg-@b.Id">Message on the Result page (for the clinician)</label>
+                <textarea id="msg-@b.Id" name="clinicianMessage" class="form-control" rows="2" maxlength="600" required>@b.ClinicianMessage</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="sum-@b.Id">Summary on the clinician PDF</label>
+                <textarea id="sum-@b.Id" name="clinicianSummary" class="form-control" rows="2" maxlength="600" required>@b.ClinicianSummary</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="hand-@b.Id">Her handout (her PDF page and "My health")</label>
+                <textarea id="hand-@b.Id" name="patientHandout" class="form-control" rows="3" maxlength="800" required>@b.PatientHandout</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Save @b.Band wording</button>
+        </form>
+    </section>
+}
+
+@* ================= 2. GUIDELINE SECTIONS ================= *@
+<h2 id="guidelines" class="mt-5 mb-3">Assistant guidelines</h2>
+<p class="text-secondary">The clinician assistant answers only from the sections marked Shown, plus the screening on screen. Each section should be signed off by the clinical advisor before real use.</p>
+
+@foreach (var g in Model.Sections)
+{
+    <section class="panel mb-4" aria-label="@g.Heading">
+        <div class="mb-2">
+            @if (g.ApprovedBy != null)
+            {
+                <span class="tag">Approved by @g.ApprovedBy on @g.ApprovedOn?.ToString("yyyy-MM-dd")</span>
+            }
+            else
+            {
+                <span class="tag">Not yet approved</span>
+            }
+            @if (!g.IsActive)
+            {
+                <span class="tag ms-1">Hidden from the assistant</span>
+            }
+        </div>
+        <form method="post" asp-page-handler="SaveSection" asp-route-id="@g.Id">
+            <div class="mb-2">
+                <label class="form-label" for="head-@g.Id">Heading</label>
+                <input id="head-@g.Id" name="heading" value="@g.Heading" class="form-control" maxlength="120" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="body-@g.Id">Guidance</label>
+                <textarea id="body-@g.Id" name="body" class="form-control" rows="6" maxlength="4000" required>@g.Body</textarea>
+            </div>
+            <div class="row g-2 align-items-end">
+                <div class="col-6 col-md-2">
+                    <label class="form-label small" for="ord-@g.Id">Order</label>
+                    <input id="ord-@g.Id" name="sortOrder" type="number" value="@g.SortOrder" class="form-control form-control-sm" />
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="isActive" value="true" id="act-@g.Id" checked="@g.IsActive" />
+                        <label class="form-check-label small" for="act-@g.Id">Shown</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small" for="appby-@g.Id">Approved by (leave empty if not approved)</label>
+                    <input id="appby-@g.Id" name="approvedBy" value="@g.ApprovedBy" class="form-control form-control-sm" maxlength="120" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small" for="appon-@g.Id">Approved on</label>
+                    <input id="appon-@g.Id" name="approvedOn" type="date" value="@g.ApprovedOn?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-quiet btn-sm w-100">Save</button>
+                </div>
+            </div>
+        </form>
+        <form method="post" asp-page-handler="DeleteSection" asp-route-id="@g.Id" onsubmit="return confirm('Delete this guideline section? To keep it but stop the assistant using it, untick Shown instead.');" class="mt-2">
+            <button type="submit" class="btn btn-link btn-sm text-danger p-0">Delete section</button>
+        </form>
+    </section>
+}
+
+<section class="panel panel-quiet mb-4" aria-labelledby="add-section-title">
+    <h3 id="add-section-title" class="h5">Add a guideline section</h3>
+    <form method="post" asp-page-handler="AddSection">
+        <div class="mb-2">
+            <label class="form-label" for="new-heading">Heading</label>
+            <input id="new-heading" name="heading" class="form-control" maxlength="120" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="new-body">Guidance (include its source, e.g. the clinic's adopted guideline)</label>
+            <textarea id="new-body" name="body" class="form-control" rows="4" maxlength="4000" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Add section</button>
+    </form>
+</section>
+
+@* ================= 3. SUGGESTED QUESTIONS ================= *@
+<h2 id="prompts" class="mt-5 mb-3">Suggested questions</h2>
+<p class="text-secondary">One-tap buttons above "Ask the clinician assistant" on the Result page.</p>
+
+<section class="panel mb-4" aria-label="Suggested questions">
+    @foreach (var p in Model.Prompts)
+    {
+        <div class="border-bottom py-2">
+            <form method="post" asp-page-handler="SavePrompt" asp-route-id="@p.Id" class="row g-2 align-items-end">
+                <div class="col-md-7">
+                    <label class="visually-hidden" for="ptext-@p.Id">Question</label>
+                    <input id="ptext-@p.Id" name="text" value="@p.Text" class="form-control form-control-sm" maxlength="200" required />
+                </div>
+                <div class="col-4 col-md-2">
+                    <label class="small text-secondary" for="pord-@p.Id">Order</label>
+                    <input id="pord-@p.Id" name="sortOrder" type="number" value="@p.SortOrder" class="form-control form-control-sm" />
+                </div>
+                <div class="col-4 col-md-1">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="isActive" value="true" id="pact-@p.Id" checked="@p.IsActive" />
+                        <label class="form-check-label small" for="pact-@p.Id">Shown</label>
+                    </div>
+                </div>
+                <div class="col-4 col-md-2">
+                    <button type="submit" class="btn btn-quiet btn-sm">Save</button>
+                </div>
+            </form>
+            <form method="post" asp-page-handler="DeletePrompt" asp-route-id="@p.Id" onsubmit="return confirm('Delete this suggested question?');" class="mt-1">
+                <button type="submit" class="btn btn-link btn-sm text-danger p-0">Delete</button>
+            </form>
+        </div>
+    }
+
+    <form method="post" asp-page-handler="AddPrompt" class="row g-2 align-items-end mt-3">
+        <div class="col-md-9">
+            <label class="form-label" for="new-prompt">Add a suggested question</label>
+            <input id="new-prompt" name="text" class="form-control" maxlength="200" required />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Add question</button>
+        </div>
+    </form>
+</section>

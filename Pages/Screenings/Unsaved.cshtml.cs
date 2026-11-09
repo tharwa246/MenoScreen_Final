@@ -16,12 +16,15 @@ public class UnsavedModel : PageModel
     private readonly ScreeningService _screenings;
     private readonly DocumentService _documents;
     private readonly AuditService _audit;
+    private readonly ContentService _content;
 
-    public UnsavedModel(ScreeningService screenings, DocumentService documents, AuditService audit)
+    public UnsavedModel(ScreeningService screenings, DocumentService documents, AuditService audit,
+                        ContentService content)
     {
         _screenings = screenings;
         _documents = documents;
         _audit = audit;
+        _content = content;
     }
 
     public List<Question> Questions { get; set; } = new();
@@ -51,7 +54,7 @@ public class UnsavedModel : PageModel
         {
             Result = await _screenings.BuildUnsavedAsync(Answers, TextAnswers, FirstName);
             Blocks = ScoringService.BlockBreakdown(Result.Answers);
-            Message = ResultModel.Messages.GetValueOrDefault(Result.Band, string.Empty);
+            Message = (await _content.GetBandAsync(Result.Band)).ClinicianMessage;
             await _audit.LogAsync("UnsavedScreening", "Screening", null, "No consent: result shown, nothing stored");
         }
         catch (InvalidOperationException ex)
@@ -69,7 +72,8 @@ public class UnsavedModel : PageModel
         try
         {
             var result = await _screenings.BuildUnsavedAsync(Answers, TextAnswers, FirstName);
-            return File(_documents.BuildPatientHandout(result), "application/pdf", "mandi-handout.pdf");
+            var wording = await _content.GetBandAsync(result.Band);
+            return File(_documents.BuildPatientHandout(result, wording), "application/pdf", "mandi-handout.pdf");
         }
         catch (InvalidOperationException)
         {

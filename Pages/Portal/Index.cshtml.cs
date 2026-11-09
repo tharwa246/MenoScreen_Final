@@ -11,12 +11,15 @@ public class IndexModel : PageModel
     private readonly PortalService _portal;
     private readonly ScreeningService _screenings;
     private readonly SuggestionService _suggestions;
+    private readonly ContentService _content;
 
-    public IndexModel(PortalService portal, ScreeningService screenings, SuggestionService suggestions)
+    public IndexModel(PortalService portal, ScreeningService screenings, SuggestionService suggestions,
+                      ContentService content)
     {
         _portal = portal;
         _screenings = screenings;
         _suggestions = suggestions;
+        _content = content;
     }
 
     // The tips she sees under "Ideas that may help"
@@ -30,7 +33,8 @@ public class IndexModel : PageModel
 
     public string FirstName => Me?.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
     public Screening? Latest => Screenings.FirstOrDefault();
-    public string LatestMessage => Latest == null ? "" : DocumentService.HandoutText.GetValueOrDefault(Latest.Band, "");
+    // Her band's handout wording (BandContent table), filled in OnGetAsync
+    public string LatestMessage { get; set; } = string.Empty;
 
     // A check-in is due if she has never done one, or her last one was 7 or more days ago
     public bool CheckInDue => !CheckIns.Any() || CheckIns[^1].CheckedInAt <= DateTime.UtcNow.AddDays(-7);
@@ -44,6 +48,9 @@ public class IndexModel : PageModel
         Screenings = await _portal.GetScreeningsAsync(Me.Id);
         CheckIns = await _portal.GetCheckInsAsync(Me.Id);
         Suggestions = await _suggestions.ForAsync(await HeaviestAreasAsync());
+
+        if (Latest != null)
+            LatestMessage = (await _content.GetBandAsync(Latest.Band)).PatientHandout;
     }
 
     // Her two heaviest symptom areas: from her latest check-in if she has one,

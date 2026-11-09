@@ -94,7 +94,7 @@
 
                 <form method="post" asp-page-handler="Ask" asp-route-id="@s.Id">
                     <div class="d-flex flex-wrap gap-2 mb-2">
-                        @foreach (var suggestion in MenoScreen.Pages.Screenings.ResultModel.SuggestedQuestions)
+                        @foreach (var suggestion in Model.SuggestedQuestions)
                         {
                             <button type="submit" name="AssistantQuestion" value="@suggestion" class="btn btn-sm btn-quiet">@suggestion</button>
                         }

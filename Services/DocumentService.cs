@@ -88,27 +88,9 @@ public class DocumentService
     private static TextSpanDescriptor Display(TextSpanDescriptor text) =>
         DisplayFont == null ? text.Bold() : text.FontFamily(DisplayFont).Bold();
 
-    // Clinician summary wording from section 7 of the brief.
-    // Temporary: later this moves into the database so the medical team can edit it.
-    private static readonly Dictionary<string, string> SummaryText = new()
-    {
-        ["Unlikely"] = "Low MenoLikelihood score. No significant symptom cluster identified at this time. Recommend: reassurance and routine follow-up.",
-        ["Possible"] = "Moderate MenoLikelihood score. Symptom cluster consistent with perimenopause. Recommend: menopause conversation, lifestyle support, consider referral.",
-        ["Likely"] = "High MenoLikelihood score. Strong symptom pattern consistent with perimenopause or menopause. Recommend: discussion of HRT options or referral to menopause-trained specialist.",
-        ["Significant"] = "Very high MenoLikelihood score. Severe symptom burden. Urgent referral to menopause-trained specialist recommended. Patient requires compassionate, timely support.",
-        ["Complex"] = "Complex case flag raised. Existing health conditions noted. Specialist referral required before any treatment decision. Do not recommend HRT without specialist input."
-    };
+    // The band wording (clinician summary, her handout) now lives in the database
+    // (BandContent table). Callers fetch it with ContentService and pass it in.
 
-    // Patient handout wording from section 7 of the brief.
-    // Temporary: later this moves into the database so the medical team can edit it.
-    public static readonly Dictionary<string, string> HandoutText = new()
-    {
-        ["Unlikely"] = "Your results today don't show a strong hormonal pattern, but your body knows best. If you notice changes, come back. JoinMandi.com has information to help you understand what to watch for.",
-        ["Possible"] = "What you are feeling has a name. Your results today suggest your hormones may be starting to change. This is perimenopause, and there is support available. JoinMandi.com will help you understand what is happening and what your options are.",
-        ["Likely"] = "Your symptoms are real, and they have a cause. Your results today suggest you are likely in perimenopause or menopause. You have options, and you deserve to know about them. JoinMandi.com will walk you through what is happening and how to find the right support.",
-        ["Significant"] = "You have been carrying a lot. Your results today show that your symptoms are significant, and you deserve urgent, proper support. Please do not wait. JoinMandi.com can help you find the right doctor now.",
-        ["Complex"] = "Your results today suggest your symptoms may be related to your hormones, but because of your health history, your doctor wants to make sure you get the right specialist support. JoinMandi.com has information to help you prepare for that conversation."
-    };
 
     // =====================================================================================
     // THE DOCUMENTS YOU CAN DOWNLOAD
@@ -117,28 +99,28 @@ public class DocumentService
     // =====================================================================================
 
     // Clinician summary on its own
-    public byte[] BuildClinicianSummary(Screening s) =>
-        Document.Create(doc => ComposeClinicianPage(doc, s)).GeneratePdf();
+    public byte[] BuildClinicianSummary(Screening s, BandContent wording) =>
+        Document.Create(doc => ComposeClinicianPage(doc, s, wording.ClinicianSummary)).GeneratePdf();
 
     // Her page on its own (also used by "screen without saving", which has no portal login)
-    public byte[] BuildPatientHandout(Screening s, PortalLogin? portal = null) =>
-        Document.Create(doc => ComposePatientPage(doc, s, portal)).GeneratePdf();
+    public byte[] BuildPatientHandout(Screening s, BandContent wording, PortalLogin? portal = null) =>
+        Document.Create(doc => ComposePatientPage(doc, s, wording.PatientHandout, portal)).GeneratePdf();
 
     // THE SCREENING PACK: everything in one PDF.
     // Page 1 is hers to take home: her result, JoinMandi, and (if given) her portal login.
     // Page 2 is the clinician summary for her file.
-    public byte[] BuildScreeningPack(Screening s, PortalLogin? portal) =>
+    public byte[] BuildScreeningPack(Screening s, BandContent wording, PortalLogin? portal) =>
         Document.Create(doc =>
         {
-            ComposePatientPage(doc, s, portal);
-            ComposeClinicianPage(doc, s);
+            ComposePatientPage(doc, s, wording.PatientHandout, portal);
+            ComposeClinicianPage(doc, s, wording.ClinicianSummary);
         }).GeneratePdf();
 
     // =====================================================================================
     // CLINICIAN SUMMARY PAGE (same layout as the Result page)
     // The screening must be loaded with Patient, and Answers including each Question.
     // =====================================================================================
-    private static void ComposeClinicianPage(IDocumentContainer doc, Screening s)
+    private static void ComposeClinicianPage(IDocumentContainer doc, Screening s, string summary)
     {
         var blocks = ScoringService.BlockBreakdown(s.Answers);
         var patchRows = s.Answers
@@ -150,7 +132,7 @@ public class DocumentService
             .Where(a => a.Question.Type == QuestionType.Context)
             .OrderBy(a => a.Question.SortOrder)
             .ToList();
-        var summary = SummaryText.GetValueOrDefault(s.Band, string.Empty);
+
         (string Fill, string Ink) band = BandColours.GetValueOrDefault(s.Band, (Muted, "#FFFFFF"));
         string how = s.Source == ScreeningSources.SelfScreen ? "QR self-screen" : "with a clinician";
 
@@ -302,9 +284,8 @@ public class DocumentService
     // HER PAGE: her result, her portal login (if given) and JoinMandi
     // Needs the screening with its Patient, and Answers including each Question.
     // =====================================================================================
-    private static void ComposePatientPage(IDocumentContainer doc, Screening s, PortalLogin? portal)
+    private static void ComposePatientPage(IDocumentContainer doc, Screening s, string text, PortalLogin? portal)
     {
-        var text = HandoutText.GetValueOrDefault(s.Band, string.Empty);
         (string Fill, string Ink) band = BandColours.GetValueOrDefault(s.Band, (Muted, "#FFFFFF"));
 
         // The two symptom areas that affect her most (by percentage of the maximum)

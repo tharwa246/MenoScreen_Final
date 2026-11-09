@@ -10,8 +10,6 @@
   <ItemGroup>
     <!-- Never copy the local database into a build or publish: deploying would overwrite the live data -->
     <None Update="app.db" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
-    <!-- The AI assistant reads this file at runtime -->
-    <None Update="Guidelines\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- The PDFs use these to match the website's fonts -->
     <None Update="Fonts\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

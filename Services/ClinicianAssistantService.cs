@@ -13,7 +13,7 @@ public record AssistantReply(bool Ok, string Text);
 // We send that question to an AI language model over the internet, and show its answer.
 //
 // What keeps it safe ("grounding"):
-//  * We give the AI the clinic's approved guideline text (Guidelines/assistant-guidelines.md)
+//  * We give the AI the clinic's guideline sections (GuidelineSections table, Admin > Clinical content)
 //    and this screening's results, and instruct it to answer ONLY from those. If the answer
 //    isn't there, it must say so instead of guessing.
 //  * It's told never to diagnose, prescribe or give doses. It supports the clinician; it
@@ -25,14 +25,14 @@ public class ClinicianAssistantService
 {
     private readonly HttpClient _http;
     private readonly IConfiguration _config;
-    private readonly IWebHostEnvironment _env;
+    private readonly ContentService _content;
     private readonly ILogger<ClinicianAssistantService> _log;
 
-    public ClinicianAssistantService(HttpClient http, IConfiguration config, IWebHostEnvironment env, ILogger<ClinicianAssistantService> log)
+    public ClinicianAssistantService(HttpClient http, IConfiguration config, ContentService content, ILogger<ClinicianAssistantService> log)
     {
         _http = http;
         _config = config;
-        _env = env;
+        _content = content;
         _log = log;
     }
 
@@ -50,7 +50,7 @@ public class ClinicianAssistantService
         if (question.Length is 0 or > 1000)
             return new(false, "Please ask a question of up to 1,000 characters.");
 
-        string guidelines = await LoadGuidelinesAsync(ct);
+        string guidelines = await _content.GetGuidelinesTextAsync();
 
         // The "system prompt": standing instructions the AI must follow for every answer.
         string system =
@@ -113,13 +113,6 @@ public class ClinicianAssistantService
         }
     }
 
-    private async Task<string> LoadGuidelinesAsync(CancellationToken ct)
-    {
-        var path = Path.Combine(_env.ContentRootPath, "Guidelines", "assistant-guidelines.md");
-        return File.Exists(path)
-            ? await File.ReadAllTextAsync(path, ct)
-            : "(No guideline file found. Answer every question with rule 2.)";
-    }
 
     // Everything the model needs about the screening, and nothing that identifies her
     private static string DescribeScreening(Screening s)

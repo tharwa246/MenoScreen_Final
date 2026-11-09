@@ -7,13 +7,18 @@
 @using MenoScreen.Models
 @using MenoScreen.Pages.Shared
 
+@{
+    // The rating instructions are shown once, above the FIRST scored section only
+    var firstScoredBlock = Model.Questions.FirstOrDefault(q => q.Type == QuestionType.Scored)?.Block;
+}
+
 @foreach (var block in Model.Questions.GroupBy(q => q.Block))
 {
     var type = block.First().Type;
     <section class="q-block" aria-labelledby="block-@block.First().Id">
         <h2 id="block-@block.First().Id">@block.Key</h2>
 
-        @if (type == QuestionType.Scored)
+        @if (type == QuestionType.Scored && block.Key == firstScoredBlock)
         {
             @if (Model.SelfScreen)
             {
