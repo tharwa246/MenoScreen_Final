@@ -20,6 +20,7 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
     options.AddPolicy("ClinicianOnly", policy => policy.RequireRole("Clinician"));
+    options.AddPolicy("DoctorOnly", policy => policy.RequireRole("Doctor"));
 });
 
 builder.Services.AddRazorPages(options =>
@@ -32,6 +33,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Doctors", "AdminOnly");
     options.Conventions.AuthorizeFolder("/Appointments", "ClinicianOnly");
     options.Conventions.AuthorizeFolder("/Translations", "AdminOnly");
+    options.Conventions.AuthorizeFolder("/MyAppointments", "DoctorOnly");
 });
 
 
@@ -43,7 +45,10 @@ builder.Services.AddScoped<VersionService>();
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<ContentService>();
 builder.Services.AddScoped<TranslationAdminService>();
-// NEW: the Azure translator. The key and region come from user-secrets, never from this file.
+builder.Services.AddScoped<DoctorAccountService>();
+
+
+//the Azure translator. The key and region come from user-secrets, never from this file.
 builder.Services.AddHttpClient<AzureTranslatorService>(client =>
 {
     var endpoint = builder.Configuration["Translator:Endpoint"]
@@ -105,6 +110,14 @@ using (var scope = app.Services.CreateScope())
         var clinician = new IdentityUser { UserName = clinicianEmail, Email = clinicianEmail, EmailConfirmed = true };
         await userManager.CreateAsync(clinician, "Clinician@1234");
         await userManager.AddToRoleAsync(clinician, "Clinician");
+    }
+    //Doctor account (development only)
+    var doctorEmail="doctor@menoscreen.test";
+    if (await userManager.FindByEmailAsync(doctorEmail) == null)
+    {
+        var doctor = new IdentityUser { UserName = doctorEmail, Email = doctorEmail, EmailConfirmed = true };
+        await userManager.CreateAsync(doctor, "Doctor@1234");
+        await userManager.AddToRoleAsync(doctor, "Doctor");
     }
 }
 

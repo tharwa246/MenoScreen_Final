@@ -1,0 +1,54 @@
+﻿@page
+@model MenoScreen.Pages.MyAppointments.IndexModel
+@using MenoScreen.Models
+@{
+    ViewData["Title"] = "My appointments";
+}
+
+<h1>My appointments</h1>
+
+@if (Model.Message != null)
+{
+    <div class="alert alert-info">@Model.Message</div>
+}
+
+@if (!Model.Rows.Any())
+{
+    <p>You have no appointments yet.</p>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr><th>When</th><th>Patient</th><th>Note</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Rows)
+            {
+                <tr>
+                    <td>@r.StartsAt.ToLocalTime().ToString("ddd d MMM yyyy HH:mm")</td>
+                    <td>@r.PatientName</td>
+                    <td>@r.Note</td>
+                    <td>
+                        @if (r.Status == AppointmentStatus.Attended) { <span class="badge bg-success">Attended</span> }
+                        else if (r.Status == AppointmentStatus.NoShow) { <span class="badge bg-danger">No-show</span> }
+                        else { <span class="badge bg-secondary">Booked</span> }
+                    </td>
+                    <td>
+                        @if (r.CanRecordOutcome)
+                        {
+                            <div class="d-flex gap-2">
+                                <form method="post" asp-page-handler="Attended" asp-route-id="@r.Id">
+                                    <button type="submit" class="btn btn-sm btn-success">Attended</button>
+                                </form>
+                                <form method="post" asp-page-handler="NoShow" asp-route-id="@r.Id">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">No-show</button>
+                                </form>
+                            </div>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

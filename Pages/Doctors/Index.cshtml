@@ -63,8 +63,10 @@
 }
 else
 {
-    <table class="table table-striped">
-        <thead><tr><th>Name</th><th>Practice</th><th>Location</th><th>Specialist</th><th>Menopause-trained</th></tr></thead>
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr><th>Name</th><th>Practice</th><th>Location</th><th>Specialist</th><th>Menopause-trained</th><th>Login</th></tr>
+        </thead>
         <tbody>
             @foreach (var d in Model.DoctorList)
             {
@@ -74,6 +76,21 @@ else
                     <td>@d.Location</td>
                     <td>@(d.IsSpecialist ? "Yes" : "No")</td>
                     <td>@(d.IsMenopauseTrained ? "Yes" : "No")</td>
+                    <td>
+                        @if (d.HasLogin)
+                        {
+                            <span class="badge bg-success">Has a login</span>
+                        }
+                        else
+                        {
+                            <form method="post" asp-page-handler="LinkAccount" class="d-flex gap-2">
+                                <input type="hidden" name="doctorId" value="@d.Id" />
+                                <input name="email" type="email" class="form-control form-control-sm" placeholder="Email" />
+                                <input name="password" type="password" autocomplete="new-password" class="form-control form-control-sm" placeholder="Password" />
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Create login</button>
+                            </form>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>

@@ -1,5 +1,6 @@
 using MenoScreen.Data;
 using MenoScreen.Models;
+using MenoScreen.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -9,14 +10,16 @@ namespace MenoScreen.Pages.Doctors;
 public class IndexModel : PageModel
 {
     private readonly ApplicationDbContext _db;
+    private readonly DoctorAccountService _accounts;
 
-    public IndexModel(ApplicationDbContext db)
+    public IndexModel(ApplicationDbContext db, DoctorAccountService accounts)
     {
         _db = db;
+        _accounts = accounts;
     }
 
     public record DoctorRow(int Id, string FullName, string Practice, string Location,
-                            bool IsSpecialist, bool IsMenopauseTrained);
+                            bool IsSpecialist, bool IsMenopauseTrained, bool HasLogin);
     public record SlotRow(string DoctorName, DateTime StartsAt, DateTime EndsAt, bool IsBooked);
 
     public List<DoctorRow> DoctorList { get; set; } = new();
@@ -30,7 +33,7 @@ public class IndexModel : PageModel
         DoctorList = await _db.Doctors
             .OrderBy(d => d.FullName)
             .Select(d => new DoctorRow(d.Id, d.FullName, d.Practice, d.City + ", " + d.Province,
-                                       d.IsSpecialist, d.IsMenopauseTrained))
+                                       d.IsSpecialist, d.IsMenopauseTrained, d.UserId != null))
             .ToListAsync();
 
         var now = DateTime.UtcNow;
@@ -108,6 +111,17 @@ public class IndexModel : PageModel
         await _db.SaveChangesAsync();
 
         Message = "Slot added.";
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostLinkAccountAsync(int doctorId, string? email, string? password)
+    {
+        var errors = await _accounts.LinkAccountAsync(doctorId, email, password);
+
+        Message = errors.Count == 0
+            ? "Login created. Give the doctor her email and password, and ask her to change the password after her first sign-in."
+            : string.Join(" ", errors);
+
         return RedirectToPage();
     }
 }

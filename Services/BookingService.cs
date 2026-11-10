@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MenoScreen.Services;
 
+public record DoctorAppointmentRow(int Id, string PatientName, DateTime StartsAt, DateTime EndsAt,
+                                   string? Note, AppointmentStatus Status, bool CanRecordOutcome);
 public class BookingService
 {
     private readonly ApplicationDbContext _db;
@@ -89,7 +91,7 @@ public class BookingService
     public Task MarkNoShowAsync(int appointmentId, string doctorUserId) =>
         SetOutcomeAsync(appointmentId, doctorUserId, AppointmentStatus.NoShow);
 
-    // NEW: the method both of the above call
+    // the method both of the above call
     private async Task SetOutcomeAsync(int appointmentId, string doctorUserId, AppointmentStatus outcome)
     {
         var appointment = await _db.Appointments
@@ -111,6 +113,31 @@ public class BookingService
         appointment.Status = outcome;
         appointment.StatusChangedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+    }
+
+    
+    // Only this doctor's own appointments. The filter is in the query, so another doctor's
+    // appointments are never loaded.
+    public async Task<List<DoctorAppointmentRow>> GetDoctorAppointmentsAsync(string? doctorUserId)
+    {
+        // Without this check, a blank id would match every doctor who has no login yet
+        if (string.IsNullOrWhiteSpace(doctorUserId))
+            return new List<DoctorAppointmentRow>();
+
+        var now = DateTime.UtcNow;
+
+        return await _db.Appointments
+            .Where(a => a.AvailabilitySlot.Doctor.UserId == doctorUserId)
+            .OrderBy(a => a.AvailabilitySlot.StartsAt)
+            .Select(a => new DoctorAppointmentRow(
+                a.Id,
+                a.Patient.FullName,
+                a.AvailabilitySlot.StartsAt,
+                a.AvailabilitySlot.EndsAt,
+                a.Note,
+                a.Status,
+                a.Status == AppointmentStatus.Booked && a.AvailabilitySlot.StartsAt <= now))
+            .ToListAsync();
     }
 
     private async Task<bool> IsComplexAsync(int patientId)
