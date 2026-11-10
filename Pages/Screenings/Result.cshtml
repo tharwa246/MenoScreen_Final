@@ -132,6 +132,15 @@
                     <input class="form-check-input" type="checkbox" name="includePortal" value="true" id="includePortal" checked />
                     <label class="form-check-label" for="includePortal">Include her portal login (username and setup code)</label>
                 </div>
+                <div class="mb-2">
+                    <label class="form-label small" for="packLang">Her page in</label>
+                    <select id="packLang" name="lang" class="form-select form-select-sm">
+                        @foreach (var l in MenoScreen.Services.TranslationHelper.Languages)
+                        {
+                            <option value="@l.Key" selected="@(l.Key == s.Patient.PreferredLanguage)">@l.Value</option>
+                        }
+                    </select>
+                </div>
                 <button type="submit" class="btn btn-primary w-100">Download her screening pack (PDF)</button>
                 <p class="small text-secondary mt-2 mb-0">
                     One document: page 1 is hers to take home (her result, JoinMandi and her login),

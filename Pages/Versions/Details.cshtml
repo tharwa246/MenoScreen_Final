@@ -1,0 +1,52 @@
+﻿@page "{id:int}"
+@model MenoScreen.Pages.Versions.DetailsModel
+@{
+    ViewData["Title"] = "Version " + Model.Version.VersionNumber;
+}
+
+<h1>Version @Model.Version.VersionNumber</h1>
+
+@if (Model.IsLocked)
+{
+    <div class="alert alert-secondary">
+        This version has been used in screenings, so it is locked. To change the questions,
+        make a copy on the versions page and edit the copy.
+    </div>
+}
+
+<p>
+    <a asp-page="Index" class="btn btn-secondary">Back to versions</a>
+    @if (!Model.IsLocked)
+    {
+        <a asp-page="/Questions/Create" asp-route-versionId="@Model.Version.Id" class="btn btn-primary">Add question</a>
+    }
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Block</th>
+            <th>Question</th>
+            <th>Type</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var q in Model.Version.Questions)
+        {
+            <tr>
+                <td>@q.Number</td>
+                <td>@q.Block</td>
+                <td>@q.Text</td>
+                <td>@q.Type</td>
+                <td>
+                    @if (!Model.IsLocked)
+                    {
+                        <a asp-page="/Questions/Edit" asp-route-id="@q.Id">Edit</a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

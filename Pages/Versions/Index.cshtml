@@ -1,0 +1,57 @@
+﻿@page
+@model MenoScreen.Pages.Versions.IndexModel
+@{
+    ViewData["Title"] = "Question versions";
+}
+
+<h1>Question set versions</h1>
+
+@if (Model.Message != null)
+{
+    <div class="alert alert-info">@Model.Message</div>
+}
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Version</th>
+            <th>Status</th>
+            <th>Questions</th>
+            <th>Scored</th>
+            <th>Screenings</th>
+            <th>Notes</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model.Rows)
+        {
+            <tr>
+                <td>@r.VersionNumber</td>
+                <td>
+                    @if (r.IsActive) { <span class="badge bg-success">Active</span> }
+                    else if (r.ScreeningCount > 0) { <span class="badge bg-secondary">Locked</span> }
+                    else { <span class="badge bg-warning text-dark">Draft</span> }
+                </td>
+                <td>@r.QuestionCount</td>
+                <td>@r.ScoredCount</td>
+                <td>@r.ScreeningCount</td>
+                <td>@r.Notes</td>
+                <td class="d-flex gap-2">
+                    <a asp-page="Details" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary">View</a>
+
+                    <form method="post" asp-page-handler="Clone" asp-route-id="@r.Id">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Make a copy</button>
+                    </form>
+
+                    @if (!r.IsActive)
+                    {
+                        <form method="post" asp-page-handler="Activate" asp-route-id="@r.Id">
+                            <button type="submit" class="btn btn-sm btn-primary">Activate</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

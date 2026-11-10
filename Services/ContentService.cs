@@ -56,4 +56,47 @@ public class ContentService
         }
         return sb.ToString();
     }
+
+    // ===== TRANSLATED INTERFACE WORDING (added from Tharwa's branch) =====
+
+    // All interface texts in one language. English is loaded first and the chosen language
+    // is laid on top, so a missing or blank translation falls back to English.
+    public async Task<Dictionary<string, string>> GetAllAsync(string? language)
+    {
+        var lang = TranslationHelper.Normalize(language);
+
+        var rows = await _db.ContentTexts
+            .AsNoTracking()
+            .Where(c => c.Language == "en" || c.Language == lang)
+            .ToListAsync();
+
+        var result = rows.Where(c => c.Language == "en").ToDictionary(c => c.Key, c => c.Value);
+
+        foreach (var c in rows.Where(c => c.Language == lang && !string.IsNullOrWhiteSpace(c.Value)))
+            result[c.Key] = c.Value;
+
+        return result;
+    }
+
+    // If a key is missing everywhere, show the key itself so the gap is obvious
+    public static string Pick(IDictionary<string, string> texts, string key) =>
+        texts.TryGetValue(key, out var value) ? value : key;
+
+    // Her handout paragraph in her language. English (and any language without a
+    // translation yet) comes from the band wording on Admin > Clinical content.
+    public async Task<string> GetHandoutAsync(string band, string? language)
+    {
+        var english = (await GetBandAsync(band)).PatientHandout;
+
+        var lang = TranslationHelper.Normalize(language);
+        if (lang == "en") return english;
+
+        var translated = await _db.ContentTexts
+            .AsNoTracking()
+            .Where(c => c.Key == "handout." + band && c.Language == lang)
+            .Select(c => c.Value)
+            .FirstOrDefaultAsync();
+
+        return string.IsNullOrWhiteSpace(translated) ? english : translated;
+    }
 }

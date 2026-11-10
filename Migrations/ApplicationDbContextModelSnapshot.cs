@@ -184,6 +184,47 @@ namespace MenoScreen.Migrations
                     b.ToTable("Clinics");
                 });
 
+            modelBuilder.Entity("MenoScreen.Models.ContentText", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsReviewed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key", "Language")
+                        .IsUnique();
+
+                    b.ToTable("ContentTexts");
+                });
+
             modelBuilder.Entity("MenoScreen.Models.GuidelineSection", b =>
                 {
                     b.Property<int>("Id")
@@ -338,6 +379,54 @@ namespace MenoScreen.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("QuestionSetVersions");
+                });
+
+            modelBuilder.Entity("MenoScreen.Models.QuestionTranslation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Block")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsReviewed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<string>("Options")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId", "Language")
+                        .IsUnique();
+
+                    b.ToTable("QuestionTranslations");
                 });
 
             modelBuilder.Entity("MenoScreen.Models.Screening", b =>
@@ -775,6 +864,17 @@ namespace MenoScreen.Migrations
                     b.Navigation("QuestionSetVersion");
                 });
 
+            modelBuilder.Entity("MenoScreen.Models.QuestionTranslation", b =>
+                {
+                    b.HasOne("MenoScreen.Models.Question", "Question")
+                        .WithMany("Translations")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+                });
+
             modelBuilder.Entity("MenoScreen.Models.Screening", b =>
                 {
                     b.HasOne("MenoScreen.Models.Patient", "Patient")
@@ -887,6 +987,11 @@ namespace MenoScreen.Migrations
                     b.Navigation("CheckIns");
 
                     b.Navigation("Screenings");
+                });
+
+            modelBuilder.Entity("MenoScreen.Models.Question", b =>
+                {
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("MenoScreen.Models.QuestionSetVersion", b =>

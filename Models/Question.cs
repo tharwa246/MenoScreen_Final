@@ -19,4 +19,7 @@ public class Question
     public string Text {get;set;}=string.Empty;
     public QuestionType Type {get;set;} 
     public string? Options {get;set;} //patient context questions only. 
+
+    // Its wording in isiZulu, isiXhosa and Afrikaans (English lives on the question itself)
+    public List<QuestionTranslation> Translations { get; set; } = new();
 }

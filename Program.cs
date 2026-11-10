@@ -58,6 +58,8 @@ builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Questions", "AdminOnly");
     options.Conventions.AuthorizeFolder("/Admin", "AdminOnly");
+    options.Conventions.AuthorizeFolder("/Versions", "AdminOnly");
+    options.Conventions.AuthorizeFolder("/Translations", "AdminOnly");
     options.Conventions.AuthorizeFolder("/Patients", "ClinicianOnly");
     options.Conventions.AuthorizeFolder("/Screenings", "ClinicianOnly");
     options.Conventions.AuthorizeFolder("/Analytics", "StaffOnly");
@@ -85,6 +87,18 @@ builder.Services.AddScoped<ClinicScopeService>();
 builder.Services.AddScoped<PortalService>();
 builder.Services.AddScoped<SuggestionService>();
 builder.Services.AddScoped<ContentService>();
+builder.Services.AddScoped<VersionService>();
+builder.Services.AddScoped<TranslationAdminService>();
+
+// Azure translator (Tharwa). The key and region come from user-secrets on a laptop, and from
+// config vars on Heroku (Translator__Key, Translator__Region), never from this file.
+builder.Services.AddHttpClient<AzureTranslatorService>(client =>
+{
+    var endpoint = builder.Configuration["Translator:Endpoint"]
+                   ?? "https://api.cognitive.microsofttranslator.com";
+    client.BaseAddress = new Uri(endpoint.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 // AI clinician assistant: the provider's address, model and key all come from
 // user-secrets (see SETUP.md), so none of them are stored in the code or in git.
 builder.Services.AddHttpClient<ClinicianAssistantService>(client =>
@@ -195,6 +209,8 @@ using (var scope = app.Services.CreateScope())
     await SuggestionSeedData.SeedAsync(db);
     // The starting band wording, guideline sections and suggested questions (only if empty)
     await ClinicalContentSeedData.SeedAsync(db);
+    // The English interface wording for translation (after the band wording, which it copies)
+    await ContentSeed.SeedAsync(db);
 
     // Demo clinics and patients: always on a laptop, and on the live site only while the
     // hosting setting Seed:DemoData is true (for the showcase). Turn it off for real use.

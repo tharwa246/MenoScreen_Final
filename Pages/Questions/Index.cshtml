@@ -8,9 +8,9 @@
 <div class="page-head">
     <div>
         <h1>Screening questions</h1>
-        <p>Grouped by symptom block, in the order patients see them. Scored questions are rated 0 to 3.</p>
+        <p>Grouped by symptom block, in the order patients see them. Scored questions are rated 0 to 3. A version that has been used in a screening is locked: to change it, make a copy on the versions page and edit the copy.</p>
     </div>
-    <a asp-page="Create" class="btn btn-primary">Add question</a>
+    <a asp-page="/Versions/Index" class="btn btn-primary">Manage versions</a>
 </div>
 
 @foreach (var version in Model.Question.GroupBy(q => q.QuestionSetVersion).OrderByDescending(g => g.Key.VersionNumber))
@@ -21,6 +21,7 @@
         {
             <span class="tag ms-2 align-middle">Active</span>
         }
+        <a asp-page="/Versions/Details" asp-route-id="@version.Key.Id" class="btn btn-sm btn-quiet ms-2 align-middle">Open version</a>
     </h2>
     @if (!string.IsNullOrWhiteSpace(version.Key.Notes))
     {

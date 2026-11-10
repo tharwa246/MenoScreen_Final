@@ -13,13 +13,24 @@
     </div>
 </div>
 
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3" role="group" aria-label="Question language">
+    <span class="small text-secondary me-1">Question language:</span>
+    @foreach (var l in MenoScreen.Services.TranslationHelper.Languages)
+    {
+        <a asp-page="New" asp-route-patientId="@Model.Patient.Id" asp-route-lang="@l.Key"
+           class="btn btn-sm @(l.Key == Model.Language ? "btn-primary" : "btn-quiet")"
+           aria-current="@(l.Key == Model.Language ? "true" : null)">@l.Value</a>
+    }
+</div>
+<p class="small text-secondary">Choose the language before answering: switching clears the form. Answers are saved in English, so results look the same in every language.</p>
+
 @if (Model.ErrorMessage != null)
 {
     <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
 }
 
 <form method="post">
-    <partial name="_QuestionFields" model="@(new MenoScreen.Pages.Shared.QuestionFormModel { Questions = Model.Questions, Answers = Model.Answers, TextAnswers = Model.TextAnswers })" />
+    <partial name="_QuestionFields" model="@(new MenoScreen.Pages.Shared.QuestionFormModel { Questions = Model.Questions, Answers = Model.Answers, TextAnswers = Model.TextAnswers, Language = Model.Language, Texts = Model.Texts })" />
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary btn-lg">See her result</button>

@@ -14,14 +14,27 @@ public class NewModel : PageModel
     private readonly ScreeningService _screenings;
     private readonly AuditService _audit;
     private readonly ClinicScopeService _scope;
+    private readonly ContentService _content;
 
-    public NewModel(ApplicationDbContext db, ScreeningService screenings, AuditService audit, ClinicScopeService scope)
+    public NewModel(ApplicationDbContext db, ScreeningService screenings, AuditService audit, ClinicScopeService scope,
+                    ContentService content)
     {
         _db = db;
         _screenings = screenings;
         _audit = audit;
         _scope = scope;
+        _content = content;
     }
+
+    // Optional ?lang=zu in the address. If empty, her preferred language is used.
+    [BindProperty(SupportsGet = true)]
+    public string? Lang { get; set; }
+
+    // The language actually used (en, zu, xh or af)
+    public string Language { get; set; } = "en";
+
+    // Interface wording (rating labels, Yes/No...) in that language
+    public Dictionary<string, string> Texts { get; set; } = new();
 
     public Patient Patient { get; set; } = null!;
     public List<Question> Questions { get; set; } = new();
@@ -58,7 +71,7 @@ public class NewModel : PageModel
             var screening = await _screenings.SaveScreeningAsync(
                 patientId, clinicianId, Answers, TextAnswers);
 
-            await _audit.LogAsync("CreateScreening", "Screening", screening.Id, $"Patient {patientId}");
+            await _audit.LogAsync("CreateScreening", "Screening", screening.Id, $"Patient {patientId}, language {Language}");
             return RedirectToPage("Result", new { id = screening.Id });
         }
         catch (InvalidOperationException ex)
@@ -76,6 +89,10 @@ public class NewModel : PageModel
 
         Patient = patient;
         Questions = await _screenings.GetActiveQuestionsAsync();
+
+        // The language picked on the page, otherwise her preferred language from her record
+        Language = TranslationHelper.Normalize(string.IsNullOrWhiteSpace(Lang) ? patient.PreferredLanguage : Lang);
+        Texts = await _content.GetAllAsync(Language);
         return true;
     }
 }

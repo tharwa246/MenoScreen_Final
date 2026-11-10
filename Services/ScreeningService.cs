@@ -26,6 +26,7 @@ public class ScreeningService
     {
         var version = await _db.QuestionSetVersions
             .Include(v => v.Questions)
+                .ThenInclude(q => q.Translations)
             .Where(v => v.IsActive)
             .OrderByDescending(v => v.VersionNumber)
             .FirstOrDefaultAsync();

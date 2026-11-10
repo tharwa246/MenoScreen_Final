@@ -25,6 +25,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<BandContent> BandContents => Set<BandContent>();
     public DbSet<GuidelineSection> GuidelineSections => Set<GuidelineSection>();
     public DbSet<AssistantPrompt> AssistantPrompts => Set<AssistantPrompt>();
+    public DbSet<QuestionTranslation> QuestionTranslations => Set<QuestionTranslation>();
+    public DbSet<ContentText> ContentTexts => Set<ContentText>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -68,6 +70,16 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // Exactly one wording row per band: the database refuses a second "Likely"
         builder.Entity<BandContent>()
             .HasIndex(b => b.Band)
+            .IsUnique();
+
+        // One translation per question per language
+        builder.Entity<QuestionTranslation>()
+            .HasIndex(t => new { t.QuestionId, t.Language })
+            .IsUnique();
+
+        // One interface text per key per language
+        builder.Entity<ContentText>()
+            .HasIndex(c => new { c.Key, c.Language })
             .IsUnique();
 
         // Deleting a clinic must never silently delete its patients

@@ -1,0 +1,100 @@
+﻿@page
+@model MenoScreen.Pages.Translations.IndexModel
+@{
+    ViewData["Title"] = "Translations";
+}
+
+<h1>Translations</h1>
+
+@if (Model.Message != null)
+{
+    <div class="alert alert-info">@Model.Message</div>
+}
+
+@if (!Model.TranslatorConfigured)
+{
+    <div class="alert alert-warning">
+        The Azure translator is not configured on this computer. Set Translator:Key and Translator:Region in user-secrets.
+    </div>
+}
+
+<p class="text-muted">
+    Azure produces drafts only. A fluent speaker must review each language and tick Reviewed before clinical use.
+    Reviewed wording is never overwritten by Azure.
+</p>
+
+@if (!Model.Versions.Any())
+{
+    <p>No question versions found.</p>
+}
+else
+{
+    <form method="get" class="mb-4">
+        <label class="form-label" for="versionId">Question version</label>
+        <select id="versionId" name="versionId" class="form-select w-auto d-inline-block">
+            @foreach (var v in Model.Versions)
+            {
+                <option value="@v.Id" selected="@(v.Id == Model.SelectedVersionId)">Version @v.VersionNumber@(v.IsActive ? " (active)" : "")</option>
+            }
+        </select>
+        <button type="submit" class="btn btn-secondary">Show</button>
+    </form>
+
+    <h3>Questions (@Model.QuestionTotal in this version)</h3>
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr><th>Language</th><th>Translated</th><th>Reviewed</th><th>Azure</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.QuestionCoverage)
+            {
+                <tr>
+                    <td>@r.Name</td>
+                    <td>@r.Translated / @Model.QuestionTotal</td>
+                    <td>@r.Reviewed / @Model.QuestionTotal</td>
+                    <td>
+                        <form method="post" asp-page-handler="TranslateQuestions" class="d-flex gap-2 align-items-center">
+                            <input type="hidden" name="versionId" value="@Model.SelectedVersionId" />
+                            <input type="hidden" name="language" value="@r.Code" />
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="replaceDrafts" value="true" id="rdq-@r.Code" />
+                                <label class="form-check-label" for="rdq-@r.Code">Replace unreviewed drafts</label>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary" disabled="@(!Model.TranslatorConfigured)">Translate with Azure</button>
+                        </form>
+                    </td>
+                    <td><a asp-page="Review" asp-route-versionId="@Model.SelectedVersionId" asp-route-lang="@r.Code">Review</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h3 class="mt-4">Interface and handout wording (@Model.WordingTotal texts)</h3>
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr><th>Language</th><th>Translated</th><th>Reviewed</th><th>Azure</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.WordingCoverage)
+            {
+                <tr>
+                    <td>@r.Name</td>
+                    <td>@r.Translated / @Model.WordingTotal</td>
+                    <td>@r.Reviewed / @Model.WordingTotal</td>
+                    <td>
+                        <form method="post" asp-page-handler="TranslateInterface" class="d-flex gap-2 align-items-center">
+                            <input type="hidden" name="versionId" value="@Model.SelectedVersionId" />
+                            <input type="hidden" name="language" value="@r.Code" />
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="replaceDrafts" value="true" id="rdw-@r.Code" />
+                                <label class="form-check-label" for="rdw-@r.Code">Replace unreviewed drafts</label>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary" disabled="@(!Model.TranslatorConfigured)">Translate with Azure</button>
+                        </form>
+                    </td>
+                    <td><a asp-page="Wording" asp-route-lang="@r.Code">Review</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

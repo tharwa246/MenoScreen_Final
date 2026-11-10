@@ -89,7 +89,7 @@ public class ResultModel : PageModel
     // "Download her screening pack": ONE PDF. Page 1 is hers (result, JoinMandi and, if ticked,
     // her portal login), page 2 is the clinician summary for her file.
     // It's a POST, not a link, because it can create her portal account or a new setup code.
-    public async Task<IActionResult> OnPostPackPdfAsync(int id, bool includePortal)
+    public async Task<IActionResult> OnPostPackPdfAsync(int id, bool includePortal, string? lang)
     {
         var screening = await _screenings.LoadFullAsync(id);
         if (screening == null || await _scope.FindPatientAsync(screening.PatientId) == null) return NotFound();
@@ -119,7 +119,12 @@ public class ResultModel : PageModel
         }
 
         await _audit.LogAsync("ExportScreeningPack", "Screening", id);
-        var bytes = _documents.BuildScreeningPack(screening, await _content.GetBandAsync(screening.Band), login);
+        // Her page in the chosen language (default: her preferred language). The clinician page stays English.
+        var language = TranslationHelper.Normalize(string.IsNullOrWhiteSpace(lang) ? screening.Patient.PreferredLanguage : lang);
+        var wording = await _content.GetBandAsync(screening.Band);
+        wording.PatientHandout = await _content.GetHandoutAsync(screening.Band, language);
+
+        var bytes = _documents.BuildScreeningPack(screening, wording, login);
         return File(bytes, "application/pdf", $"mandi-screening-pack-{id}.pdf");
     }
 
@@ -129,7 +134,9 @@ public class ResultModel : PageModel
         if (screening == null || await _scope.FindPatientAsync(screening.PatientId) == null) return NotFound();
 
         await _audit.LogAsync("ExportHandoutPdf", "Screening", id);
-        var bytes = _documents.BuildPatientHandout(screening, await _content.GetBandAsync(screening.Band));
+        var wording = await _content.GetBandAsync(screening.Band);
+        wording.PatientHandout = await _content.GetHandoutAsync(screening.Band, screening.Patient.PreferredLanguage);
+        var bytes = _documents.BuildPatientHandout(screening, wording);
         return File(bytes, "application/pdf", $"mandi-handout-{id}.pdf");
     }
 
