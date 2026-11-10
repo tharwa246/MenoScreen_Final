@@ -7,6 +7,7 @@ namespace MenoScreen.Services;
 public record BandCount(string Band, int Count, int Percent);
 public record WeekCount(DateTime WeekStart, int Count);
 public record BlockAverage(string Block, int AveragePercent);
+public record ClinicTotal(int ClinicId, string Name, int Patients, int Screenings, int AverageMenoLikelihood, int ComplexCount);
 
 public class AnalyticsSummary
 {
@@ -31,14 +32,26 @@ public class AnalyticsService
 
     public AnalyticsService(ApplicationDbContext db) => _db = db;
 
-    public async Task<AnalyticsSummary> GetSummaryAsync(int weeks = 12)
+    // clinicId = null means "all clinics together" (admins only; clinicians always pass their own)
+    public async Task<AnalyticsSummary> GetSummaryAsync(int? clinicId = null, int weeks = 12)
     {
         var now = DateTime.UtcNow;
+
+        // Which rows count? Everything, or just one clinic's patients and their screenings
+        var screeningQuery = _db.Screenings.AsQueryable();
+        var answerQuery = _db.Answers.AsQueryable();
+        var patientQuery = _db.Patients.AsQueryable();
+        if (clinicId != null)
+        {
+            screeningQuery = screeningQuery.Where(s => s.Patient.ClinicId == clinicId);
+            answerQuery = answerQuery.Where(a => a.Screening.Patient.ClinicId == clinicId);
+            patientQuery = patientQuery.Where(p => p.ClinicId == clinicId);
+        }
 
         // Load just 4 small fields per screening, then do the counting in C#.
         // A clinic has hundreds of screenings, not millions, so this is fast, and it
         // behaves the same on SQLite and Postgres (date maths differs between databases).
-        var screenings = await _db.Screenings
+        var screenings = await screeningQuery
             .Select(s => new { s.ScreenedAt, s.Band, s.MenoLikelihood, s.Source })
             .ToListAsync();
 
@@ -63,7 +76,7 @@ public class AnalyticsService
 
         // For each symptom block: the average answer across every screening, shown as a
         // percentage of the maximum (3). E.g. average answer 2.1 out of 3 = 70%.
-        var scoredAnswers = await _db.Answers
+        var scoredAnswers = await answerQuery
             .Where(a => a.Question.Type == QuestionType.Scored)
             .Select(a => new { a.Question.Block, a.Question.SortOrder, Value = a.Value ?? 0 })
             .ToListAsync();
@@ -76,7 +89,7 @@ public class AnalyticsService
 
         return new AnalyticsSummary
         {
-            TotalPatients = await _db.Patients.CountAsync(),
+            TotalPatients = await patientQuery.CountAsync(),
             TotalScreenings = total,
             ScreeningsLast30Days = screenings.Count(s => s.ScreenedAt >= now.AddDays(-30)),
             AverageMenoLikelihood = total == 0 ? 0 : (int)Math.Round(screenings.Average(s => s.MenoLikelihood)),
@@ -86,5 +99,46 @@ public class AnalyticsService
             Weekly = weekly,
             BlockAverages = blockAverages
         };
+    }
+
+    // ADMIN ONLY: one row per clinic, for the pie chart and the comparison table
+    public async Task<List<ClinicTotal>> GetClinicTotalsAsync()
+    {
+        var clinics = await _db.Clinics
+            .OrderBy(c => c.Name)
+            .Select(c => new { c.Id, c.Name, Patients = c.Patients.Count })
+            .ToListAsync();
+
+        var screenings = await _db.Screenings
+            .Select(s => new { s.Patient.ClinicId, s.MenoLikelihood, s.Band })
+            .ToListAsync();
+
+        return clinics.Select(c =>
+        {
+            var mine = screenings.Where(s => s.ClinicId == c.Id).ToList();
+            return new ClinicTotal(
+                c.Id,
+                c.Name,
+                c.Patients,
+                mine.Count,
+                mine.Count == 0 ? 0 : (int)Math.Round(mine.Average(s => s.MenoLikelihood)),
+                mine.Count(s => s.Band == "Complex"));
+        }).ToList();
+    }
+
+    // HOW MANY SCREENINGS WERE DONE WITHOUT CONSENT (and so aren't in the figures above)?
+    // Nothing from those screenings is stored, but the audit log notes THAT one happened,
+    // and who ran it. So we count those notes, and work out the clinic from the clinician.
+    public async Task<int> CountUnsavedScreeningsAsync(int? clinicId)
+    {
+        var notes = _db.AuditLogs.Where(a => a.Action == "UnsavedScreening");
+
+        if (clinicId != null)
+        {
+            var clinicStaff = _db.StaffProfiles.Where(s => s.ClinicId == clinicId).Select(s => s.UserId);
+            notes = notes.Where(a => a.UserId != null && clinicStaff.Contains(a.UserId));
+        }
+
+        return await notes.CountAsync();
     }
 }

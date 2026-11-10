@@ -94,7 +94,7 @@
 
                 <form method="post" asp-page-handler="Ask" asp-route-id="@s.Id">
                     <div class="d-flex flex-wrap gap-2 mb-2">
-                        @foreach (var suggestion in MenoScreen.Pages.Screenings.ResultModel.SuggestedQuestions)
+                        @foreach (var suggestion in Model.SuggestedQuestions)
                         {
                             <button type="submit" name="AssistantQuestion" value="@suggestion" class="btn btn-sm btn-quiet">@suggestion</button>
                         }
@@ -127,9 +127,20 @@
     <div class="col-lg-4">
         <section class="panel" aria-labelledby="next-title">
             <h2 id="next-title">Next steps</h2>
+            <form method="post" asp-page-handler="PackPdf" asp-route-id="@s.Id" class="mt-3">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="includePortal" value="true" id="includePortal" checked />
+                    <label class="form-check-label" for="includePortal">Include her portal login (username and setup code)</label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Download her screening pack (PDF)</button>
+                <p class="small text-secondary mt-2 mb-0">
+                    One document: page 1 is hers to take home (her result, JoinMandi and her login),
+                    page 2 is the clinician summary for her file. Each download makes a new setup code,
+                    so only the newest printout works.
+                </p>
+            </form>
             <div class="d-grid gap-2 mt-3">
-                <a asp-page-handler="HandoutPdf" asp-route-id="@s.Id" class="btn btn-primary">Download her handout (PDF)</a>
-                <a asp-page-handler="ClinicianPdf" asp-route-id="@s.Id" class="btn btn-outline-primary">Download clinician summary (PDF)</a>
+                <a asp-page-handler="ClinicianPdf" asp-route-id="@s.Id" class="btn btn-quiet">Clinician summary only (PDF)</a>
                 <button type="button" class="btn btn-quiet" onclick="window.print()">Print this page</button>
             </div>
         </section>

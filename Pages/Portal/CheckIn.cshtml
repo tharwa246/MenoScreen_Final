@@ -1,0 +1,80 @@
+@page
+@model MenoScreen.Pages.Portal.CheckInModel
+@using MenoScreen.Models
+@{
+    ViewData["Title"] = "Weekly check-in";
+
+    // The five sliders: (field name, question, current value)
+    var areas = new[]
+    {
+        ("VasomotorSleep", "Hot flushes, night sweats and sleep", Model.Input.VasomotorSleep),
+        ("CognitiveMood", "Mood, memory and concentration", Model.Input.CognitiveMood),
+        ("MusculoskeletalEnergy", "Joints, energy and headaches", Model.Input.MusculoskeletalEnergy),
+        ("UrogenitalSexual", "Bladder, vaginal comfort and intimacy", Model.Input.UrogenitalSexual),
+        ("QualityOfLife", "How much it's affecting your daily life", Model.Input.QualityOfLife)
+    };
+}
+
+<a class="back-link" asp-page="Index">Back to my health</a>
+
+<div class="page-head pt-3">
+    <div>
+        <h1>Weekly check-in</h1>
+        <p>How has this past week been? Move each slider: 0 means no problem at all, 10 means as bad as it gets.</p>
+    </div>
+</div>
+
+@if (Model.AlreadyToday)
+{
+    <div class="alert alert-info" role="status">You've already checked in today. You can check in again tomorrow.</div>
+}
+
+<form method="post" class="panel form-narrow">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    @foreach (var (field, label, value) in areas)
+    {
+        <div class="mb-4">
+            <label for="@field" class="form-label fw-semibold">@label</label>
+            <div class="d-flex align-items-center gap-3">
+                <span class="small text-secondary">0</span>
+                <input type="range" class="form-range" min="0" max="10" step="1"
+                       id="@field" name="Input.@field" value="@value"
+                       oninput="document.getElementById('@(field)-value').textContent = this.value" />
+                <span class="small text-secondary">10</span>
+                <strong id="@(field)-value" class="checkin-value" aria-hidden="true">@value</strong>
+            </div>
+        </div>
+    }
+
+    <fieldset class="mb-4">
+        <legend class="form-label fw-semibold">Are you using HRT (hormone replacement therapy)?</legend>
+        @for (int i = 0; i < HrtStatuses.All.Length; i++)
+        {
+            var status = HrtStatuses.All[i];
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="Input.HrtStatus" id="hrt-@i" value="@status" checked="@(Model.Input.HrtStatus == status)" />
+                <label class="form-check-label" for="hrt-@i">@status</label>
+            </div>
+        }
+        <span asp-validation-for="Input.HrtStatus" class="text-danger small"></span>
+
+        <label asp-for="Input.HrtStartedOn" class="form-label mt-3">If yes or stopped: when did you start?</label>
+        <input asp-for="Input.HrtStartedOn" type="date" class="form-control" style="max-width: 14rem" />
+        <span asp-validation-for="Input.HrtStartedOn" class="text-danger small"></span>
+    </fieldset>
+
+    <div class="mb-4">
+        <label asp-for="Input.Note" class="form-label fw-semibold">Anything else you'd like your clinic to know? (optional)</label>
+        <textarea asp-for="Input.Note" class="form-control" rows="3" maxlength="500"></textarea>
+    </div>
+
+    <div class="form-check mb-4">
+        <input asp-for="Input.WantsContact" class="form-check-input" />
+        <label asp-for="Input.WantsContact" class="form-check-label">I'd like my clinic to contact me</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-lg w-100" disabled="@Model.AlreadyToday">Send my check-in</button>
+</form>
+
+<p class="small text-secondary mt-3">If you feel very unwell or unsafe, don't wait for a check-in: call your clinic, or 10177 (or 112 from a cellphone) in an emergency.</p>

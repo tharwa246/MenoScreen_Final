@@ -18,6 +18,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<ScreeningInvite> ScreeningInvites => Set<ScreeningInvite>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<Clinic> Clinics => Set<Clinic>();
+    public DbSet<StaffProfile> StaffProfiles => Set<StaffProfile>();
+    public DbSet<WeeklyCheckIn> WeeklyCheckIns => Set<WeeklyCheckIn>();
+    public DbSet<Suggestion> Suggestions => Set<Suggestion>();
+    public DbSet<BandContent> BandContents => Set<BandContent>();
+    public DbSet<GuidelineSection> GuidelineSections => Set<GuidelineSection>();
+    public DbSet<AssistantPrompt> AssistantPrompts => Set<AssistantPrompt>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -44,6 +51,38 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // The audit log is read newest-first
         builder.Entity<AuditLog>()
             .HasIndex(a => a.At);
+
+        // One portal login belongs to exactly one patient
+        builder.Entity<Patient>()
+            .HasIndex(p => p.UserId)
+            .IsUnique();
+
+        // Her check-ins are always read in date order
+        builder.Entity<WeeklyCheckIn>()
+            .HasIndex(c => new { c.PatientId, c.CheckedInAt });
+
+        // Tips are always read by area, in display order
+        builder.Entity<Suggestion>()
+            .HasIndex(s => new { s.Area, s.SortOrder });
+
+        // Exactly one wording row per band: the database refuses a second "Likely"
+        builder.Entity<BandContent>()
+            .HasIndex(b => b.Band)
+            .IsUnique();
+
+        // Deleting a clinic must never silently delete its patients
+        builder.Entity<Patient>()
+            .HasOne(p => p.Clinic)
+            .WithMany(c => c.Patients)
+            .HasForeignKey(p => p.ClinicId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // If a clinic is deleted, its staff simply have no clinic until reassigned
+        builder.Entity<StaffProfile>()
+            .HasOne(s => s.Clinic)
+            .WithMany()
+            .HasForeignKey(s => s.ClinicId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 

@@ -32,10 +32,9 @@ public class LoginModel : PageModel
 
     public class InputModel
     {
-        [Required(ErrorMessage = "Enter your email address.")]
-        [EmailAddress(ErrorMessage = "Enter a valid email address.")]
-        [Display(Name = "Email")]
-        public string Email { get; set; } = string.Empty;
+        // Staff sign in with their email, patients with their portal username
+        [Required(ErrorMessage = "Enter your email or username.")]
+        [Display(Name = "Email or username")]        public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Enter your password.")]
         [DataType(DataType.Password)]
@@ -79,7 +78,7 @@ public class LoginModel : PageModel
         if (result.IsLockedOut)
         {
             ModelState.AddModelError(string.Empty,
-                "Too many wrong passwords. This account is locked for a few minutes. Try again later, or ask your clinic admin.");
+                "This account is locked. After too many wrong passwords that lasts a few minutes; if an admin has disabled the account, ask them to enable it.");
             return Page();
         }
 

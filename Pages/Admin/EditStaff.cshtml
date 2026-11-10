@@ -1,0 +1,93 @@
+@page
+@model MenoScreen.Pages.Admin.EditStaffModel
+@{
+    ViewData["Title"] = "Edit staff account";
+}
+
+<a class="back-link" asp-page="Staff">Back to staff</a>
+
+<div class="page-head pt-3">
+    <div>
+        <h1>@(string.IsNullOrWhiteSpace(Model.Input.FullName) ? Model.StaffUser.Email : Model.Input.FullName)</h1>
+        <p>@Model.StaffUser.Email · @(Model.Disabled ? "Disabled: can't sign in" : "Active")</p>
+    </div>
+</div>
+
+@if (Model.StatusMessage != null)
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+
+<form method="post" asp-page-handler="Save" asp-route-id="@Model.StaffUser.Id" class="panel form-narrow mb-4">
+    <h2>Details</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Input.FullName" class="form-label"></label>
+        <input asp-for="Input.FullName" class="form-control" autocomplete="off" />
+        <span asp-validation-for="Input.FullName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Role" class="form-label"></label>
+        <select asp-for="Input.Role" class="form-select">
+            @foreach (var role in MenoScreen.Pages.Admin.AddStaffModel.AssignableRoles)
+            {
+                <option value="@role">@role</option>
+            }
+        </select>
+        <span asp-validation-for="Input.Role" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.ClinicId" class="form-label"></label>
+        <select asp-for="Input.ClinicId" class="form-select">
+            <option value="">Choose a clinic</option>
+            @foreach (var clinic in Model.Clinics)
+            {
+                <option value="@clinic.Id">@clinic.Name</option>
+            }
+        </select>
+        <div class="form-text">Clinicians only. Admins can see every clinic.</div>
+        <span asp-validation-for="Input.ClinicId" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save changes</button>
+</form>
+
+<section class="panel form-narrow mb-4" aria-labelledby="pw-title">
+    <h2 id="pw-title">New temporary password</h2>
+    <p class="text-secondary">For when they've forgotten theirs. Give it to them in person and ask them to change it after signing in.</p>
+    <form method="post" asp-page-handler="ResetPassword" asp-route-id="@Model.StaffUser.Id" class="d-flex flex-wrap gap-2">
+        <label for="NewPassword" class="visually-hidden">New temporary password</label>
+        <input id="NewPassword" name="NewPassword" type="password" class="form-control" style="max-width: 18rem"
+               autocomplete="new-password" minlength="8" required placeholder="New temporary password" />
+        <button type="submit" class="btn btn-quiet">Set password</button>
+    </form>
+    <div class="form-text">At least 8 characters, with an upper-case letter, a number and a symbol.</div>
+</section>
+
+@if (!Model.IsMe)
+{
+    <section class="panel form-narrow" aria-labelledby="access-title">
+        <h2 id="access-title">Access</h2>
+        @if (Model.Disabled)
+        {
+            <p>This account is disabled. Enabling it lets them sign in again with their existing password.</p>
+            <form method="post" asp-page-handler="Enable" asp-route-id="@Model.StaffUser.Id">
+                <button type="submit" class="btn btn-primary">Enable account</button>
+            </form>
+        }
+        else
+        {
+            <p class="text-secondary">Disabling stops them signing in straight away. Nothing is deleted: their screenings and audit history stay, which POPIA requires.</p>
+            <form method="post" asp-page-handler="Disable" asp-route-id="@Model.StaffUser.Id" onsubmit="return confirm('Disable this account?');">
+                <button type="submit" class="btn btn-outline-danger">Disable account</button>
+            </form>
+        }
+    </section>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

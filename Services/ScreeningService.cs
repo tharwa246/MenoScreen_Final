@@ -77,7 +77,7 @@ public class ScreeningService
         return screening;
     }
 
-    private async Task<Screening> BuildScreeningAsync(
+        private async Task<Screening> BuildScreeningAsync(
         int patientId,
         string clinicianId,
         IDictionary<int, int> numericAnswers,
@@ -87,12 +87,43 @@ public class ScreeningService
         // 1. The patient must exist, and she must have agreed to her answers being recorded.
         //    POPIA treats health information as "special personal information", which we may
         //    only process with her consent. This check is the last line of defence: even if a
-        //    page forgot to check, no screening can be saved without consent.
+        //    page forgot to check, no screening can be SAVED without consent.
         var patient = await _db.Patients.FindAsync(patientId)
             ?? throw new InvalidOperationException("Patient not found.");
         if (!patient.ConsentGiven)
             throw new InvalidOperationException("This patient's consent has not been recorded. Record consent on her patient record before screening.");
 
+        // 2-5. Check her answers and work out the score
+        var screening = await ScoreAnswersAsync(numericAnswers, textAnswers);
+        screening.PatientId = patientId;
+        screening.ClinicianId = clinicianId;
+        screening.Source = source;
+        return screening;
+    }
+
+    // SCREENING WITHOUT CONSENT
+    // She can still be screened and see her result, but NOTHING is saved: this builds the
+    // result in memory only. It never adds anything to the database or calls SaveChanges,
+    // so once the page is closed her answers are gone. The first name is only used for the
+    // greeting on her printed handout.
+    public async Task<Screening> BuildUnsavedAsync(
+        IDictionary<int, int> numericAnswers,
+        IDictionary<int, string> textAnswers,
+        string? firstName)
+    {
+        var screening = await ScoreAnswersAsync(numericAnswers, textAnswers);
+        screening.Patient = new Patient
+        {
+            FullName = string.IsNullOrWhiteSpace(firstName) ? "there" : firstName.Trim()
+        };
+        return screening;
+    }
+
+    // The steps every screening shares (saved or not): check the answers, then score them
+    private async Task<Screening> ScoreAnswersAsync(
+        IDictionary<int, int> numericAnswers,
+        IDictionary<int, string> textAnswers)
+    {
         // 2. Load the questions from the database
         var questions = await GetActiveQuestionsAsync();
 
@@ -112,35 +143,33 @@ public class ScreeningService
         // 4. Score it (this also checks every scored question has a 0-3 answer)
         var result = _scoring.Calculate(questions, numericAnswers);
 
-        // 5. Build the screening and its answers
+        // 5. Build the screening and its answers (not saved here: the caller decides)
         var screening = new Screening
         {
-            PatientId = patientId,
-            ClinicianId = clinicianId,
             QuestionSetVersionId = questions[0].QuestionSetVersionId,
             RawScore = result.RawScore,
             MenoLikelihood = result.MenoLikelihood,
             ScoreBand = result.ScoreBand,
-            Band = result.Band,
-            Source = source
+            Band = result.Band
         };
 
         foreach (var q in questions)
         {
+            // Question = q links each answer to its question, so the result page can show
+            // the wording and symptom block straight away
             if (q.Type == QuestionType.Context)
             {
                 if (textAnswers.TryGetValue(q.Id, out var text) && !string.IsNullOrWhiteSpace(text))
-                    screening.Answers.Add(new Answer { QuestionId = q.Id, TextValue = text });
+                    screening.Answers.Add(new Answer { QuestionId = q.Id, Question = q, TextValue = text });
             }
             else if (numericAnswers.TryGetValue(q.Id, out var value))
             {
-                screening.Answers.Add(new Answer { QuestionId = q.Id, Value = value });
+                screening.Answers.Add(new Answer { QuestionId = q.Id, Question = q, Value = value });
             }
         }
 
         return screening;
     }
-
     // Loads one screening together with her details and every answer + question.
     // "Include" tells Entity Framework to fetch the linked rows in the same query,
     // otherwise screening.Patient and answer.Question would be empty.

@@ -11,13 +11,21 @@ public class ResultModel : PageModel
     private readonly DocumentService _documents;
     private readonly AuditService _audit;
     private readonly ClinicianAssistantService _assistant;
+    private readonly ClinicScopeService _scope;
+      private readonly PortalService _portal;
+    private readonly ContentService _content;
 
-    public ResultModel(ScreeningService screenings, DocumentService documents, AuditService audit, ClinicianAssistantService assistant)
+    public ResultModel(ScreeningService screenings, DocumentService documents, AuditService audit,
+                       ClinicianAssistantService assistant, ClinicScopeService scope, PortalService portal,
+                       ContentService content)
     {
         _screenings = screenings;
         _documents = documents;
         _audit = audit;
         _assistant = assistant;
+        _scope = scope;
+        _portal = portal;
+        _content = content;
     }
 
     public Screening Screening { get; set; } = null!;
@@ -38,25 +46,8 @@ public class ResultModel : PageModel
     public string? CustomQuestion { get; set; }
     public AssistantReply? AssistantReply { get; set; }
 
-    // On-screen messages from section 7 of the brief.
-    // Temporary: later these move into the database so the medical team can edit them.
-    private static readonly Dictionary<string, string> Messages = new()
-    {
-        ["Unlikely"] = "Her symptom profile does not strongly suggest hormonal change at this time. Reassure her and invite her to return if symptoms persist or worsen.",
-        ["Possible"] = "Her symptom profile is consistent with early perimenopause. Begin the menopause conversation. Consider lifestyle support or referral.",
-        ["Likely"] = "Her symptom profile is strongly consistent with peri/menopause. Discuss HRT options or refer to a menopause-trained GP or gynaecologist.",
-        ["Significant"] = "She is carrying a significant symptom burden. Urgent referral is recommended. Please use warm, validating language in your conversation and in her summary.",
-        ["Complex"] = "This patient has existing health conditions that require specialist input before any treatment is considered. Please refer before discussing HRT."
-    };
-
-    // Suggested questions shown as one-tap buttons
-    public static readonly string[] SuggestedQuestions =
-    {
-        "What should I focus on first with her?",
-        "How do I explain this result to her in plain language?",
-        "When should I refer her, and to whom?"
-    };
-
+        // The one-tap suggested questions for the assistant (AssistantPrompts table)
+    public List<string> SuggestedQuestions { get; set; } = new();
     public async Task<IActionResult> OnGetAsync(int id)
     {
         if (!await LoadAsync(id)) return NotFound();
@@ -88,30 +79,69 @@ public class ResultModel : PageModel
     public async Task<IActionResult> OnGetClinicianPdfAsync(int id)
     {
         var screening = await _screenings.LoadFullAsync(id);
-        if (screening == null) return NotFound();
+        if (screening == null || await _scope.FindPatientAsync(screening.PatientId) == null) return NotFound();
 
         await _audit.LogAsync("ExportClinicianPdf", "Screening", id);
-        var bytes = _documents.BuildClinicianSummary(screening);
+        var bytes = _documents.BuildClinicianSummary(screening, await _content.GetBandAsync(screening.Band));
         return File(bytes, "application/pdf", $"clinician-summary-{id}.pdf");
+    }
+
+    // "Download her screening pack": ONE PDF. Page 1 is hers (result, JoinMandi and, if ticked,
+    // her portal login), page 2 is the clinician summary for her file.
+    // It's a POST, not a link, because it can create her portal account or a new setup code.
+    public async Task<IActionResult> OnPostPackPdfAsync(int id, bool includePortal)
+    {
+        var screening = await _screenings.LoadFullAsync(id);
+        if (screening == null || await _scope.FindPatientAsync(screening.PatientId) == null) return NotFound();
+
+        PortalLogin? login = null;
+        if (includePortal && screening.Patient.ConsentGiven)
+        {
+            string username;
+            string code;
+            if (screening.Patient.UserId == null)
+            {
+                // First time: make her account (generated username + setup code)
+                (username, code) = await _portal.CreateAccessAsync(screening.Patient);
+                await _audit.LogAsync("CreatePortalAccess", "Patient", screening.PatientId, $"Username {username}");
+            }
+            else
+            {
+                // She already has an account: a fresh code (any older printout stops working)
+                code = await _portal.NewSetupCodeAsync(screening.Patient);
+                username = await _portal.GetUsernameAsync(screening.Patient) ?? string.Empty;
+                await _audit.LogAsync("NewPortalSetupCode", "Patient", screening.PatientId);
+            }
+
+            // The QR code opens the setup page with her username already filled in
+            var setupUrl = Url.Page("/Portal/Setup", pageHandler: null, values: new { u = username }, protocol: Request.Scheme)!;
+            login = new PortalLogin(username, code, setupUrl);
+        }
+
+        await _audit.LogAsync("ExportScreeningPack", "Screening", id);
+        var bytes = _documents.BuildScreeningPack(screening, await _content.GetBandAsync(screening.Band), login);
+        return File(bytes, "application/pdf", $"mandi-screening-pack-{id}.pdf");
     }
 
     public async Task<IActionResult> OnGetHandoutPdfAsync(int id)
     {
         var screening = await _screenings.LoadFullAsync(id);
-        if (screening == null) return NotFound();
+        if (screening == null || await _scope.FindPatientAsync(screening.PatientId) == null) return NotFound();
 
         await _audit.LogAsync("ExportHandoutPdf", "Screening", id);
-        var bytes = _documents.BuildPatientHandout(screening);
+        var bytes = _documents.BuildPatientHandout(screening, await _content.GetBandAsync(screening.Band));
         return File(bytes, "application/pdf", $"mandi-handout-{id}.pdf");
     }
 
     private async Task<bool> LoadAsync(int id)
     {
         var screening = await _screenings.LoadFullAsync(id);
-        if (screening == null) return false;
+        // Another clinic's result counts as "not found"
+        if (screening == null || await _scope.FindPatientAsync(screening.PatientId) == null) return false;
 
         Screening = screening;
-        Message = Messages.GetValueOrDefault(screening.Band, string.Empty);
+        Message = (await _content.GetBandAsync(screening.Band)).ClinicianMessage;
+        SuggestedQuestions = await _content.GetPromptsAsync();
         Blocks = ScoringService.BlockBreakdown(screening.Answers);
 
         PatchRows = screening.Answers

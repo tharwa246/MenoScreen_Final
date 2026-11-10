@@ -1,0 +1,103 @@
+@page
+@model MenoScreen.Pages.Admin.ScreeningsModel
+@using MenoScreen.Models
+@using MenoScreen.Services
+@{
+    ViewData["Title"] = "All screenings";
+}
+
+<a class="back-link" asp-page="AdminHome">Back to admin</a>
+
+<div class="page-head pt-3">
+    <div>
+        <h1>All screenings</h1>
+        <p>Every clinic's screenings, newest first. Results only; her answers stay with her clinic.</p>
+    </div>
+        <a asp-page="Patients" class="btn btn-switch">All patients &rarr;</a>
+</div>
+
+@if (Model.StatusMessage != null)
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-md-4">
+        <label for="clinicId" class="form-label">Clinic</label>
+        <select id="clinicId" name="clinicId" class="form-select">
+            <option value="">All clinics</option>
+            @foreach (var c in Model.Clinics)
+            {
+                <option value="@c.Id" selected="@(c.Id == Model.ClinicId)">@c.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="band" class="form-label">Band</label>
+        <select id="band" name="band" class="form-select">
+            <option value="">All bands</option>
+            @foreach (var b in ScoringService.Bands)
+            {
+                <option value="@b" selected="@(b == Model.Band)">@b</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-5 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a asp-page="Screenings" class="btn btn-quiet">Clear</a>
+    </div>
+</form>
+
+<p class="small text-secondary">
+    @if (Model.Total > Model.Rows.Count)
+    {
+        <text>Showing the newest @Model.Rows.Count of @Model.Total. Filter to narrow it down.</text>
+    }
+    else
+    {
+        <text>@Model.Total screening@(Model.Total == 1 ? "" : "s")</text>
+    }
+</p>
+
+@if (!Model.Rows.Any())
+{
+    <div class="empty-state"><p class="mb-0">No screenings match these filters.</p></div>
+}
+else
+{
+    <div class="table-panel">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Patient</th>
+                    <th scope="col">Clinic</th>
+                    <th scope="col">Score</th>
+                    <th scope="col">Band</th>
+                    <th scope="col">How</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Rows)
+                {
+                    <tr>
+                        <td class="text-nowrap">@r.ScreenedAt.ToString("d MMM yyyy HH:mm")</td>
+                        <td><a asp-page="EditPatient" asp-route-id="@r.PatientId">@r.PatientName</a></td>
+                        <td>@r.ClinicName</td>
+                        <td>@r.MenoLikelihood / 100</td>
+                        <td><span class="band band-@r.Band.ToLower()">@r.Band</span></td>
+                        <td>@(r.Source == ScreeningSources.SelfScreen ? "QR self-screen" : "With clinician")</td>
+                        <td class="text-end">
+                            <form method="post" asp-page-handler="Delete" asp-route-id="@r.Id"
+                                  asp-route-clinicId="@Model.ClinicId" asp-route-band="@Model.Band"
+                                  onsubmit="return confirm('Delete this screening and its answers? This cannot be undone.');">
+                                <button type="submit" class="btn btn-link btn-sm text-danger p-0">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

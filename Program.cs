@@ -6,26 +6,19 @@ using MenoScreen.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ---------------------------------------------------------------------------
-// DATABASE
-// Which database do we use? We read one setting, "Database:Provider":
-//   - "Sqlite"   (the default) = a local file called app.db in this project folder.
-//                 Good for development: nothing to install, nothing online.
-//   - "Postgres" = a database hosted online (e.g. Supabase or Neon), so the whole
-//                 team and a deployed site can share the same data.
-// The connection string says WHERE the database is. For Postgres it contains a
-// password, so it lives in "user-secrets" on each laptop, never in git (SETUP.md).
-// The rest of the app doesn't care which one is used: Entity Framework talks to both.
+// DATABASE: PostgreSQL, a real database server
+//   - Development: the team's shared database on Neon. Its address (which contains
+//     the password) is kept in user-secrets on each laptop, never in git (SETUP.md).
+//   - Live site:   Heroku Postgres. Heroku hands the app its address in a setting
+//     called DATABASE_URL, so we check that first.
+// The tables themselves are defined by the Migrations folder (see block 0 below).
 // ---------------------------------------------------------------------------
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-var dbProvider = builder.Configuration["Database:Provider"] ?? "Sqlite";
+var databaseAddress = builder.Configuration["DATABASE_URL"]
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("No database connection string found. See SETUP.md.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-{
-    if (dbProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
-        options.UseNpgsql(connectionString);
-    else
-        options.UseSqlite(connectionString);
-});
+    options.UseNpgsql(DatabaseUrl.ToNpgsqlConnectionString(databaseAddress)));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
@@ -57,6 +50,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("ClinicianOnly", policy => policy.RequireRole("Clinician"));
     // Analytics is useful to both the clinic admin and clinicians
     options.AddPolicy("StaffOnly", policy => policy.RequireRole("Admin", "Clinician"));
+    // The patient portal: only patients, and each patient only sees her own data
+    options.AddPolicy("PatientOnly", policy => policy.RequireRole("Patient"));
 });
 
 builder.Services.AddRazorPages(options =>
@@ -66,6 +61,9 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Patients", "ClinicianOnly");
     options.Conventions.AuthorizeFolder("/Screenings", "ClinicianOnly");
     options.Conventions.AuthorizeFolder("/Analytics", "StaffOnly");
+    options.Conventions.AuthorizeFolder("/Portal", "PatientOnly");
+    // The setup page must be open: she isn't signed in yet when she uses it
+    options.Conventions.AllowAnonymousToPage("/Portal/Setup");
     // Clinician accounts are created by an admin, not by anyone off the internet
     options.Conventions.AuthorizeAreaPage("Identity", "/Account/Register", "AdminOnly");
     // /SelfScreen stays public on purpose: patients open it from a QR code,
@@ -83,6 +81,10 @@ builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<InviteService>();
 builder.Services.AddScoped<AnalyticsService>();
+builder.Services.AddScoped<ClinicScopeService>();
+builder.Services.AddScoped<PortalService>();
+builder.Services.AddScoped<SuggestionService>();
+builder.Services.AddScoped<ContentService>();
 // AI clinician assistant: the provider's address, model and key all come from
 // user-secrets (see SETUP.md), so none of them are stored in the code or in git.
 builder.Services.AddHttpClient<ClinicianAssistantService>(client =>
@@ -184,12 +186,27 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-//SEEDING BLOCK 2: the 23 questions
+//SEEDING BLOCK 2: the 23 questions, then (on a laptop only) the demo clinics and patients
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await SeedData.SeedQuestionsAsync(db);
+    // The starting portal tips (only if there are none yet; admins manage them after that)
+    await SuggestionSeedData.SeedAsync(db);
+    // The starting band wording, guideline sections and suggested questions (only if empty)
+    await ClinicalContentSeedData.SeedAsync(db);
+
+    // Demo clinics and patients: always on a laptop, and on the live site only while the
+    // hosting setting Seed:DemoData is true (for the showcase). Turn it off for real use.
+
+    if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Seed:DemoData"))
+    {
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+        var screenings = scope.ServiceProvider.GetRequiredService<ScreeningService>();
+        await DemoDataSeeder.SeedAsync(db, userManager, screenings);
+    }
 }
 // PDF FONTS: load the website's fonts from the Fonts folder so the PDFs match the site
 DocumentService.RegisterFonts(Path.Combine(app.Environment.ContentRootPath, "Fonts"));
 app.Run();
+

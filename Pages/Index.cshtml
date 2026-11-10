@@ -1,10 +1,13 @@
 @page
 @model IndexModel
+@inject MenoScreen.Services.ClinicScopeService ClinicScope
 @{
     ViewData["Title"] = "Home";
     bool isAdmin = User.IsInRole("Admin");
     bool isClinician = User.IsInRole("Clinician");
     bool signedIn = User.Identity?.IsAuthenticated == true;
+    // Which clinic is this clinician signed in to? (admins look after all clinics)
+    string? clinicName = isClinician ? await ClinicScope.GetClinicNameAsync() : null;
 }
 
 @if (!signedIn)
@@ -27,7 +30,10 @@
 else
 {
 <section class="pt-4">
-        <h1>Welcome back.</h1>
+        <h1>
+            Welcome back.
+            <span class="welcome-clinic">@(isAdmin ? "All clinics" : clinicName ?? "No clinic assigned yet")</span>
+        </h1>
         <p class="lead-quiet">What would you like to do?</p>
 
         <div class="task-grid">

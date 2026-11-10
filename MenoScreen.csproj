@@ -10,7 +10,6 @@
   <ItemGroup>
     <!-- Never copy the local database into a build or publish: deploying would overwrite the live data -->
     <None Update="app.db" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
-    <!-- The AI assistant reads this file at runtime -->
     <!-- The PDFs use these to match the website's fonts -->
     <None Update="Fonts\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
@@ -19,7 +18,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.13" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.13" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" PrivateAssets="all" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.13" />

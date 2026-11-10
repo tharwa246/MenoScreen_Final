@@ -43,6 +43,9 @@
                 <label asp-for="NewPatient.ConsentGiven" class="form-check-label"></label>
             </div>
             <span asp-validation-for="NewPatient.ConsentGiven" class="text-danger small"></span>
+            <p class="small mt-2 mb-0">
+                She says no? You can still <a asp-page="/Screenings/Unsaved">screen her without saving anything</a>.
+            </p>
         </fieldset>
 
         <button type="submit" class="btn btn-primary btn-lg w-100">Start her screening</button>

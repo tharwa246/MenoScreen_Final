@@ -1,0 +1,52 @@
+@page
+@model MenoScreen.Pages.Admin.StaffModel
+@{
+    ViewData["Title"] = "Staff";
+}
+
+<a class="back-link" asp-page="AdminHome">Back to admin</a>
+
+<div class="page-head pt-3">
+    <div>
+        <h1>Staff</h1>
+        <p>Everyone who can sign in to MenoScreen. Click a name to edit it, disable it or reset the password.</p>
+    </div>
+    <a asp-page="AddStaff" class="btn btn-primary">Add staff</a>
+</div>
+
+<section class="panel">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Clinic</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Staff)
+                {
+                    <tr>
+                        <td><a asp-page="EditStaff" asp-route-id="@s.UserId">@s.Name</a></td>
+                        <td>@s.Email</td>
+                        <td>@s.Role</td>
+                        <td>@s.Clinic</td>
+                        <td>
+                            @if (s.Disabled)
+                            {
+                                <span class="badge text-bg-secondary">Disabled</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-success">Active</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

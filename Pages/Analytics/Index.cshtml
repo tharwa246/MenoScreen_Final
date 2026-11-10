@@ -4,14 +4,92 @@
     ViewData["Title"] = "Analytics";
     var m = Model.Summary;
     int weekMax = Math.Max(1, m.Weekly.Count == 0 ? 1 : m.Weekly.Max(w => w.Count));
+
+    // The pie chart's data, handed to the chart script as JSON (names are safely escaped)
+    var pieJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.ClinicTotals.Select(c => new { id = c.ClinicId, name = c.Name, screenings = c.Screenings }));
 }
 
 <div class="page-head">
     <div>
         <h1>Clinic analytics</h1>
-        <p>Totals across every screening. No patient names appear on this page.</p>
+        <p>@Model.ScopeName. Totals across every screening; no patient names appear on this page.</p>
+        <p class="small mt-2 mb-0">
+            <strong>Only screenings with the patient's consent are counted.</strong>
+            @if (Model.UnsavedCount > 0)
+            {
+                @: @Model.UnsavedCount @(Model.UnsavedCount == 1 ? "screening was" : "screenings were") done without consent and @(Model.UnsavedCount == 1 ? "isn't" : "aren't") included, because nothing from them is stored.
+            }
+            else
+            {
+                @: Screenings done without consent aren't stored, so they never appear here.
+            }
+        </p>
     </div>
 </div>
+
+@if (Model.IsAdmin && Model.ClinicTotals.Any())
+{
+    <section class="panel mb-4" aria-labelledby="clinics-title">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+            <div>
+                <h2 id="clinics-title" class="mb-0">Screenings by clinic</h2>
+                <p class="text-secondary mb-0">Click a slice, or choose a clinic, to see only that clinic below.</p>
+            </div>
+            <form method="get" class="d-flex gap-2">
+                <label for="clinicId" class="visually-hidden">Choose a clinic</label>
+                <select id="clinicId" name="clinicId" class="form-select" onchange="this.form.submit()">
+                    <option value="">All clinics</option>
+                    @foreach (var c in Model.ClinicTotals)
+                    {
+                        <option value="@c.ClinicId" selected="@(c.ClinicId == Model.ClinicId)">@c.Name</option>
+                    }
+                </select>
+                <noscript><button type="submit" class="btn btn-quiet">Show</button></noscript>
+            </form>
+        </div>
+
+        <div class="row g-4 align-items-center">
+            <div class="col-md-5">
+                <div class="clinic-pie">
+                    <canvas id="clinicPie" role="img"
+                            aria-label="Screenings by clinic: @(string.Join(", ", Model.ClinicTotals.Select(c => $"{c.Name} {c.Screenings}")))"></canvas>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Clinic</th>
+                                <th class="text-end">Patients</th>
+                                <th class="text-end">Screenings</th>
+                                <th class="text-end">Average score</th>
+                                <th class="text-end">Complex</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.ClinicTotals)
+                            {
+                                <tr class="@(c.ClinicId == Model.ClinicId ? "table-active" : "")">
+                                    <td><a asp-page="Index" asp-route-clinicId="@c.ClinicId">@c.Name</a></td>
+                                    <td class="text-end">@c.Patients</td>
+                                    <td class="text-end">@c.Screenings</td>
+                                    <td class="text-end">@c.AverageMenoLikelihood</td>
+                                    <td class="text-end">@c.ComplexCount</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (Model.ClinicId != null)
+                {
+                    <a asp-page="Index" class="btn btn-quiet btn-sm mt-3">Show all clinics</a>
+                }
+            </div>
+        </div>
+    </section>
+}
 
 @if (m.TotalScreenings == 0)
 {
@@ -92,4 +170,44 @@ else
             </section>
         </div>
     </div>
+}
+
+
+@section Scripts {
+    @if (Model.IsAdmin && Model.ClinicTotals.Any())
+    {
+        @* Chart.js draws the pie chart. It loads from a public library site (no install needed). *@
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <script>
+            const clinics = @Html.Raw(pieJson);
+            const selectedId = @(Model.ClinicId?.ToString() ?? "null");
+            // Official Mandi palette (brand guidelines): Terra, Golden, Coral, Deep Brown, Sun, Flame
+            const colours = ['#C94A2B', '#F2C14E', '#F07B54', '#673C33', '#F5A623', '#E8632A'];
+
+            new Chart(document.getElementById('clinicPie'), {
+                type: 'pie',
+                data: {
+                    labels: clinics.map(c => c.name),
+                    datasets: [{
+                        data: clinics.map(c => c.screenings),
+                        backgroundColor: clinics.map((c, i) => colours[i % colours.length]),
+                        // The chosen clinic's slice is pulled out a little
+                        offset: clinics.map(c => c.id === selectedId ? 18 : 0),
+                        borderColor: '#FDF6EC',   // Warm Cream, so the slices have soft gaps
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Montserrat' } } } },
+                    // Clicking a slice reloads the page showing only that clinic
+                    onClick: (event, slices) => {
+                        if (slices.length) window.location.search = '?clinicId=' + clinics[slices[0].index].id;
+                    },
+                    onHover: (event, slices) => {
+                        event.native.target.style.cursor = slices.length ? 'pointer' : 'default';
+                    }
+                }
+            });
+        </script>
+    }
 }

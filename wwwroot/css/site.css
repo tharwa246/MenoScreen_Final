@@ -228,6 +228,20 @@ p { max-width: 70ch; }
   --bs-btn-active-bg: var(--mandi-sand);
   --bs-btn-active-color: var(--mandi-brown);
 }
+/* Light orange "go to another list" button (e.g. All patients <-> All screenings).
+   A different colour from actions (terracotta) and quiet buttons (cream), so it reads as navigation. */
+.btn-switch {
+  --bs-btn-color: var(--mandi-ink-on-sun);
+  --bs-btn-bg: #FCE3C4;
+  --bs-btn-border-color: #F0B467;
+  --bs-btn-hover-color: var(--mandi-ink-on-sun);
+  --bs-btn-hover-bg: #F9D3A3;
+  --bs-btn-hover-border-color: var(--mandi-orange);
+  --bs-btn-active-bg: #F9D3A3;
+  --bs-btn-active-color: var(--mandi-ink-on-sun);
+  --bs-btn-active-border-color: var(--mandi-orange);
+}
+
 /* Yellow pill, like the site's "EN" language switch */
 .btn-sun {
   --bs-btn-color: var(--mandi-ink-on-sun);
@@ -629,3 +643,73 @@ main { overflow-x: clip; }
 .start-grid { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }
 @media (min-width: 900px) { .start-grid { grid-template-columns: 1fr 1fr; align-items: start; } }
 .start-grid .panel + .panel { margin-top: 0; }
+
+/* Clinic name under "Welcome back." on the home page */
+.welcome-clinic {
+  display: block;
+  color: var(--mandi-terracotta);
+}
+
+/* ---------- Clinic banner: which clinic you're working in ---------- */
+.clinic-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .25rem .75rem;
+  margin-top: 1rem;
+  padding: .75rem 1.25rem;
+  border-radius: var(--radius);
+  background: var(--mandi-sand);
+}
+.clinic-banner-label {
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--mandi-muted);
+}
+.clinic-banner-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  color: var(--mandi-brown);
+}
+
+/* Admin analytics: the clinic pie chart */
+.clinic-pie {
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+/* Patient portal: the new username + setup code box on her patient page */
+.portal-code {
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  background: var(--mandi-sand);
+}
+.portal-code-value {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: .08em;
+  color: var(--mandi-brown);
+}
+
+/* Patient portal */
+.portal-score {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--mandi-terracotta);
+}
+.portal-score small { font-size: 1rem; color: var(--mandi-muted); }
+.portal-chart { position: relative; height: 320px; }
+.checkin-value {
+  min-width: 2ch;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--mandi-brown);
+  text-align: right;
+}

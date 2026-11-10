@@ -1,0 +1,52 @@
+@page
+@model MenoScreen.Pages.Portal.SetupModel
+@{
+    ViewData["Title"] = "Set up your account";
+}
+
+<div class="page-head pt-3">
+    <div>
+        <h1>Set up your account</h1>
+        <p>Use the username and setup code from your clinic, then choose your own password.</p>
+    </div>
+</div>
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+<form method="post" class="panel form-narrow">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Username" class="form-label"></label>
+        <input asp-for="Input.Username" class="form-control" autocomplete="username" autocapitalize="none" />
+        <span asp-validation-for="Input.Username" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.SetupCode" class="form-label"></label>
+        <input asp-for="Input.SetupCode" class="form-control" autocomplete="one-time-code" placeholder="ABCD-EFGH" />
+        <span asp-validation-for="Input.SetupCode" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Password" class="form-label"></label>
+        <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
+        <div class="form-text">At least 8 characters, with an upper-case letter, a number and a symbol.</div>
+        <span asp-validation-for="Input.Password" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-4">
+        <label asp-for="Input.ConfirmPassword" class="form-label"></label>
+        <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" />
+        <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-lg w-100">Set up my account</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -12,11 +12,13 @@ public class CreateModel : PageModel
 {
     private readonly ApplicationDbContext _db;
     private readonly AuditService _audit;
+    private readonly ClinicScopeService _scope;
 
-    public CreateModel(ApplicationDbContext db, AuditService audit)
+    public CreateModel(ApplicationDbContext db, AuditService audit, ClinicScopeService scope)
     {
         _db = db;
         _audit = audit;
+        _scope = scope;
     }
 
     [BindProperty]
@@ -55,10 +57,19 @@ public class CreateModel : PageModel
             return Page();
         }
 
+        // The new patient joins the clinician's own clinic
+        var clinicId = await _scope.GetClinicIdAsync();
+        if (clinicId == null)
+        {
+            ModelState.AddModelError(string.Empty, "Your account isn't linked to a clinic yet. Ask an admin to assign you to one.");
+            return Page();
+        }
+
         var patient = new Patient
         {
             FullName = Input.FullName.Trim(),
-            PreferredLanguage = Input.PreferredLanguage
+            PreferredLanguage = Input.PreferredLanguage,
+            ClinicId = clinicId.Value
         };
 
         if (Input.ConsentGiven)

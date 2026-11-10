@@ -1,0 +1,96 @@
+@page
+@model MenoScreen.Pages.Admin.PatientsModel
+@{
+    ViewData["Title"] = "All patients";
+}
+
+<a class="back-link" asp-page="AdminHome">Back to admin</a>
+
+<div class="page-head pt-3">
+    <div>
+        <h1>All patients</h1>
+        <p>Every clinic's patients. Open "Manage" to correct her details, move her to another clinic, or delete her record.</p>
+    </div>
+    <a asp-page="Screenings" class="btn btn-switch">All screenings &rarr;</a>
+</div>
+
+@if (Model.StatusMessage != null)
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+
+<form method="get" class="row g-2 align-items-end mb-3" role="search">
+    <div class="col-md-4">
+        <label for="clinicId" class="form-label">Clinic</label>
+        <select id="clinicId" name="clinicId" class="form-select">
+            <option value="">All clinics</option>
+            @foreach (var c in Model.Clinics)
+            {
+                <option value="@c.Id" selected="@(c.Id == Model.ClinicId)">@c.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-5">
+        <label for="search" class="form-label">Name</label>
+        <input id="search" name="search" value="@Model.Search" class="form-control" placeholder="Search by name" />
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a asp-page="Patients" class="btn btn-quiet">Clear</a>
+    </div>
+</form>
+
+<p class="small text-secondary">@Model.Patients.Count patient@(Model.Patients.Count == 1 ? "" : "s")</p>
+
+@if (!Model.Patients.Any())
+{
+    <div class="empty-state"><p class="mb-0">No patients match these filters.</p></div>
+}
+else
+{
+    <div class="table-panel">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Clinic</th>
+                    <th scope="col">Latest result</th>
+                    <th scope="col">Screenings</th>
+                    <th scope="col">Portal</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Patients)
+                {
+                    <tr>
+                        <td>
+                            <span class="fw-bold">@p.FullName</span>
+                            @if (!p.ConsentGiven)
+                            {
+                                <div><span class="tag tag-warn">Consent not recorded</span></div>
+                            }
+                        </td>
+                        <td>@p.ClinicName</td>
+                        <td>
+                            @if (p.LastBand != null)
+                            {
+                                <span class="band band-@p.LastBand.ToLower()">@p.LastBand</span>
+                                <div class="small text-secondary">@p.LastScreenedAt?.ToString("d MMM yyyy")</div>
+                            }
+                            else
+                            {
+                                <span class="text-secondary">Not screened yet</span>
+                            }
+                        </td>
+                        <td>@p.ScreeningCount</td>
+                        <td>@(p.HasPortal ? "Yes" : "No")</td>
+                        <td class="text-end">
+                            <a asp-page="EditPatient" asp-route-id="@p.Id" class="btn btn-sm btn-quiet">Manage</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

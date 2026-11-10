@@ -1,0 +1,91 @@
+@page
+@model MenoScreen.Pages.Admin.SuggestionsModel
+@using MenoScreen.Models
+@{
+    ViewData["Title"] = "Portal tips";
+}
+
+<a class="back-link" asp-page="AdminHome">Back to admin</a>
+
+<div class="page-head pt-3">
+    <div>
+        <h1>Portal tips</h1>
+        <p>The self-care ideas patients see on "My health", for their heaviest symptom areas. General self-care only: no diagnosis, medicines or doses.</p>
+    </div>
+</div>
+
+@if (Model.StatusMessage != null)
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+
+<section class="panel mb-4" aria-labelledby="add-title">
+    <h2 id="add-title">Add a tip</h2>
+    <form method="post" asp-page-handler="Add" class="row g-3 align-items-end">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="col-md-4">
+            <label asp-for="Input.Area" class="form-label"></label>
+            <select asp-for="Input.Area" class="form-select">
+                @foreach (var area in SuggestionAreas.Titles)
+                {
+                    <option value="@area.Key">@area.Value</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Input.Text" class="form-label"></label>
+            <input asp-for="Input.Text" class="form-control" maxlength="300" />
+            <span asp-validation-for="Input.Text" class="text-danger small"></span>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Add tip</button>
+        </div>
+    </form>
+</section>
+
+@foreach (var area in SuggestionAreas.Titles)
+{
+    var tips = Model.All.Where(t => t.Area == area.Key).ToList();
+
+    <section class="panel mb-4" aria-label="@area.Value">
+        <h2 class="mb-1">@area.Value</h2>
+        <p class="small text-secondary">@(area.Key == SuggestionAreas.General ? "Shown to every patient." : $"Shown when \"{area.Key}\" is one of her heaviest areas.")</p>
+
+        @if (!tips.Any())
+        {
+            <p class="text-secondary mb-0">No tips yet.</p>
+        }
+
+        @foreach (var t in tips)
+        {
+            <div class="border-top py-3">
+                <form method="post" asp-page-handler="Save" asp-route-id="@t.Id" class="row g-2 align-items-end">
+                    <div class="col-md-8">
+                        <label class="visually-hidden" for="text-@t.Id">Tip</label>
+                        <textarea id="text-@t.Id" name="text" class="form-control form-control-sm" rows="2" maxlength="300" required>@t.Text</textarea>
+                    </div>
+                    <div class="col-4 col-md-1">
+                        <label class="small text-secondary" for="order-@t.Id">Order</label>
+                        <input id="order-@t.Id" name="sortOrder" type="number" value="@t.SortOrder" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-4 col-md-1">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="isActive" value="true" id="active-@t.Id" checked="@t.IsActive" />
+                            <label class="form-check-label small" for="active-@t.Id">Shown</label>
+                        </div>
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <button type="submit" class="btn btn-quiet btn-sm">Save</button>
+                    </div>
+                </form>
+                <form method="post" asp-page-handler="Delete" asp-route-id="@t.Id" onsubmit="return confirm('Delete this tip? To keep it but stop showing it, untick Shown instead.');" class="mt-1">
+                    <button type="submit" class="btn btn-link btn-sm text-danger p-0">Delete</button>
+                </form>
+            </div>
+        }
+    </section>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

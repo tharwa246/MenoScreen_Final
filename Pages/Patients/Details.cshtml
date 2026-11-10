@@ -33,10 +33,44 @@
     <div class="panel panel-quiet mb-4">
         <h2>Consent not recorded</h2>
         <p>Ask her whether she agrees to her answers being recorded and used for her care. You can't screen her until she does.</p>
-        <form method="post" asp-page-handler="Consent" asp-route-id="@Model.Patient.Id">
+        <form method="post" asp-page-handler="Consent" asp-route-id="@Model.Patient.Id" class="d-flex flex-wrap gap-2">
             <button type="submit" class="btn btn-primary">She agrees: record consent</button>
+            <a asp-page="/Screenings/Unsaved" class="btn btn-quiet">She says no: screen without saving</a>
         </form>
     </div>
+}
+
+@if (Model.Patient.ConsentGiven)
+{
+    <section class="panel mb-4" aria-labelledby="portal-title">
+        <h2 id="portal-title">Patient portal</h2>
+
+        @if (Model.NewSetupCode != null)
+        {
+            <div class="portal-code" role="status">
+                <p class="mb-2">Give her these now. The code is shown <strong>only once</strong> and works for 7 days.</p>
+                <p class="mb-1">Username: <strong>@Model.PortalUsername</strong></p>
+                <p class="mb-2">Setup code: <strong class="portal-code-value">@Model.NewSetupCode</strong></p>
+                <p class="small mb-0">She opens <strong>@Url.Page("/Portal/Setup", null, null, Request.Scheme)</strong>, enters both, and chooses her own password.</p>
+            </div>
+        }
+
+        @if (Model.PortalUsername == null)
+        {
+            <p class="text-secondary">Let her see her own results and do a short weekly check-in from her phone.</p>
+            <form method="post" asp-page-handler="CreatePortal" asp-route-id="@Model.Patient.Id">
+                <button type="submit" class="btn btn-primary">Create portal access</button>
+            </form>
+        }
+        else
+        {
+            <p class="mb-1">Username: <strong>@Model.PortalUsername</strong></p>
+            <p class="text-secondary small">Lost her code or forgotten her password? A new setup code lets her choose a new password.</p>
+            <form method="post" asp-page-handler="NewSetupCode" asp-route-id="@Model.Patient.Id">
+                <button type="submit" class="btn btn-quiet">New setup code</button>
+            </form>
+        }
+    </section>
 }
 
 <h2 class="mt-2">Screening history</h2>
@@ -68,6 +102,56 @@ else
                         <td><span class="band band-@s.Band.ToLower()">@s.Band</span></td>
                         <td>@(s.Source == MenoScreen.Models.ScreeningSources.SelfScreen ? "Self-screen (QR)" : "With clinician")</td>
                         <td class="text-end"><a asp-page="/Screenings/Result" asp-route-id="@s.Id">Open result</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="mt-5">Weekly check-ins</h2>
+@if (!Model.CheckIns.Any())
+{
+    <div class="empty-state mt-2">
+        <p class="mb-0">No check-ins yet. She can do them from her patient portal.</p>
+    </div>
+}
+else
+{
+    var contact = Model.CheckIns.FirstOrDefault(c => c.WantsContact);
+    @if (contact != null)
+    {
+        <div class="alert alert-warning mt-2" role="alert">
+            <strong>She asked to be contacted</strong> in her check-in on @contact.CheckedInAt.ToString("d MMM yyyy").
+        </div>
+    }
+    <p class="small text-secondary mt-2">0 = no problem, 10 = as bad as it gets. Newest first.</p>
+    <div class="table-panel">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Flushes and sleep</th>
+                    <th scope="col">Mood and memory</th>
+                    <th scope="col">Joints and energy</th>
+                    <th scope="col">Bladder and intimacy</th>
+                    <th scope="col">Daily life</th>
+                    <th scope="col">HRT</th>
+                    <th scope="col">Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model.CheckIns)
+                {
+                    <tr>
+                        <td>@c.CheckedInAt.ToString("d MMM yyyy")@(c.WantsContact ? " (contact me)" : "")</td>
+                        <td>@c.VasomotorSleep</td>
+                        <td>@c.CognitiveMood</td>
+                        <td>@c.MusculoskeletalEnergy</td>
+                        <td>@c.UrogenitalSexual</td>
+                        <td>@c.QualityOfLife</td>
+                        <td>@c.HrtStatus@(c.HrtStartedOn != null ? $" (since {c.HrtStartedOn:d MMM yyyy})" : "")</td>
+                        <td>@c.Note</td>
                     </tr>
                 }
             </tbody>
