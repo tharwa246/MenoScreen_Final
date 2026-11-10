@@ -75,7 +75,7 @@
                             <td class="text-end">
                                 @if (c.Patients == 0)
                                 {
-                                    <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" onsubmit="return confirm('Delete this clinic? This cannot be undone.');">
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" data-confirm="Delete this clinic? This cannot be undone.">
                                         <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
                                     </form>
                                 }

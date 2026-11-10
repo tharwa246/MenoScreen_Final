@@ -78,7 +78,7 @@
                         <button type="submit" class="btn btn-quiet btn-sm">Save</button>
                     </div>
                 </form>
-                <form method="post" asp-page-handler="Delete" asp-route-id="@t.Id" onsubmit="return confirm('Delete this tip? To keep it but stop showing it, untick Shown instead.');" class="mt-1">
+                <form method="post" asp-page-handler="Delete" asp-route-id="@t.Id" data-confirm="Delete this tip? To keep it but stop showing it, untick Shown instead." class="mt-1">
                     <button type="submit" class="btn btn-link btn-sm text-danger p-0">Delete</button>
                 </form>
             </div>

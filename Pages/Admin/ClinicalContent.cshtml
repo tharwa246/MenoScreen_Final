@@ -107,7 +107,7 @@
                 </div>
             </div>
         </form>
-        <form method="post" asp-page-handler="DeleteSection" asp-route-id="@g.Id" onsubmit="return confirm('Delete this guideline section? To keep it but stop the assistant using it, untick Shown instead.');" class="mt-2">
+        <form method="post" asp-page-handler="DeleteSection" asp-route-id="@g.Id" data-confirm="Delete this guideline section? To keep it but stop the assistant using it, untick Shown instead." class="mt-2">
             <button type="submit" class="btn btn-link btn-sm text-danger p-0">Delete section</button>
         </form>
     </section>
@@ -155,7 +155,7 @@
                     <button type="submit" class="btn btn-quiet btn-sm">Save</button>
                 </div>
             </form>
-            <form method="post" asp-page-handler="DeletePrompt" asp-route-id="@p.Id" onsubmit="return confirm('Delete this suggested question?');" class="mt-1">
+            <form method="post" asp-page-handler="DeletePrompt" asp-route-id="@p.Id" data-confirm="Delete this suggested question?" class="mt-1">
                 <button type="submit" class="btn btn-link btn-sm text-danger p-0">Delete</button>
             </form>
         </div>

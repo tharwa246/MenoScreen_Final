@@ -91,7 +91,7 @@ else
                         <td class="text-end">
                             <form method="post" asp-page-handler="Delete" asp-route-id="@r.Id"
                                   asp-route-clinicId="@Model.ClinicId" asp-route-band="@Model.Band"
-                                  onsubmit="return confirm('Delete this screening and its answers? This cannot be undone.');">
+                                  data-confirm="Delete this screening and its answers? This cannot be undone.">
                                 <button type="submit" class="btn btn-link btn-sm text-danger p-0">Delete</button>
                             </form>
                         </td>

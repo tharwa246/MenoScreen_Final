@@ -15,7 +15,11 @@
     </section>
 
     <section class="login-card" aria-labelledby="login-title">
-        <h1 id="login-title">Sign in</h1>
+        <div class="login-brand">
+            <p class="login-wordmark"><span class="brand-mark">Mandi</span> <span class="brand-product">MenoScreen</span></p>
+            <p class="login-tagline">Clinical Decision Support Tool</p>
+        </div>
+        <h1 id="login-title">Log in</h1>
         <p class="text-secondary">For clinicians, clinic admins and patients.</p>
 
         <form method="post" asp-route-returnUrl="@Model.ReturnUrl" novalidate>
@@ -38,7 +42,11 @@
                 <label asp-for="Input.RememberMe" class="form-check-label"></label>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-lg w-100">Sign in</button>
+            <button type="submit" class="btn btn-primary btn-lg w-100">Log in</button>
+            <p class="login-secure">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+                Role-based secure access
+            </p>
         </form>
 
         <p class="login-help">
@@ -47,6 +55,10 @@
         </p>
         <p class="login-help">
             Patient with a setup code? <a asp-area="" asp-page="/Portal/Setup">Set up your account</a>.
+        </p>
+        <p class="login-disclaimer">
+            MenoScreen is a screening aid that supports clinical judgement. It does not provide a diagnosis
+            or replace a consultation with a healthcare professional.
         </p>
     </section>
 </div>

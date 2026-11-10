@@ -81,7 +81,7 @@
         else
         {
             <p class="text-secondary">Disabling stops them signing in straight away. Nothing is deleted: their screenings and audit history stay, which POPIA requires.</p>
-            <form method="post" asp-page-handler="Disable" asp-route-id="@Model.StaffUser.Id" onsubmit="return confirm('Disable this account?');">
+            <form method="post" asp-page-handler="Disable" asp-route-id="@Model.StaffUser.Id" data-confirm="Disable this account?">
                 <button type="submit" class="btn btn-outline-danger">Disable account</button>
             </form>
         }

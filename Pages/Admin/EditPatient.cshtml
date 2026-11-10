@@ -91,7 +91,7 @@
                             <td>@(s.Source == ScreeningSources.SelfScreen ? "QR self-screen" : "With clinician")</td>
                             <td class="text-end">
                                 <form method="post" asp-page-handler="DeleteScreening" asp-route-id="@Model.Patient.Id"
-                                      onsubmit="return confirm('Delete this screening and its answers? This cannot be undone.');">
+                                      data-confirm="Delete this screening and its answers? This cannot be undone.">
                                     <input type="hidden" name="screeningId" value="@s.Id" />
                                     <button type="submit" class="btn btn-link btn-sm text-danger p-0">Delete</button>
                                 </form>

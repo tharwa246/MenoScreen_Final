@@ -132,17 +132,19 @@ p { max-width: 70ch; }
   gap: .55rem;
   text-decoration: none;
 }
-.brand-mark {
+/* "Mandi MenoScreen" as ONE wordmark: same rounded font and size, two colours
+   (orange Mandi, brown MenoScreen), matching the printed showcase material */
+.brand-mark,
+.brand-product {
   font-family: var(--font-display);
-  font-size: 2.8rem;
+  font-size: 2rem;
   font-weight: 700;
-  color: var(--mandi-orange);
   line-height: 1;
 }
-.brand-product {
-  font-size: .95rem;
-  color: var(--mandi-muted);
-  font-weight: 600;
+.brand-mark { color: var(--mandi-orange); }
+.brand-product { color: var(--mandi-brown); }
+@media (max-width: 575px) {
+  .brand-mark, .brand-product { font-size: 1.6rem; }
 }
 
 .site-header .nav-link {
@@ -607,6 +609,27 @@ body.selfscreen { background: var(--mandi-gradient); background-attachment: fixe
 main { overflow-x: clip; }
 .home-hero h1 .accent { display: block; color: var(--mandi-sun); }
 
+/* The product name at the top of the landing page.
+   ".home-hero .hero-product" is more specific than ".home-hero p", so these sizes win. */
+.home-hero .hero-product {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 3.2rem;
+  line-height: 1;
+  color: var(--mandi-cream);
+  margin: 0 auto .4rem;
+}
+@media (min-width: 768px) { .home-hero .hero-product { font-size: 4.6rem; } }
+.home-hero .hero-product-mark { color: var(--mandi-sun); }
+.home-hero .hero-product-tag {
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  font-size: .85rem;
+  color: var(--mandi-cream);
+  margin: 0 auto 1.8rem;
+}
+
 /* ---------- Sign-in page ---------- */
 
 .login-shell {
@@ -636,6 +659,44 @@ main { overflow-x: clip; }
 .login-card { padding: 2.5rem 2rem; }
 .login-card h1 { font-size: 2.2rem; }
 .login-help { margin: 1.5rem 0 0; font-size: .9rem; color: var(--mandi-muted); }
+
+/* FlutterFlow-style card details */
+.login-brand {
+  text-align: center;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--mandi-line);
+}
+.login-wordmark { margin: 0; }
+.login-wordmark .brand-mark,
+.login-wordmark .brand-product { font-size: 2.4rem; }
+.login-tagline {
+  margin: .4rem 0 0;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--mandi-muted);
+}
+.login-secure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  margin: .75rem 0 0;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--mandi-muted);
+}
+.login-disclaimer {
+  margin: 1.5rem 0 0;
+  padding: .85rem 1rem;
+  font-size: .8rem;
+  line-height: 1.45;
+  color: var(--mandi-text);
+  background: var(--mandi-sand);
+  border-radius: var(--radius-sm);
+}
 /* Hide the error box when there are no errors to show */
 .validation-summary-valid { display: none; }
 
@@ -712,4 +773,26 @@ main { overflow-x: clip; }
   font-size: 1.4rem;
   color: var(--mandi-brown);
   text-align: right;
+}
+
+
+/* ---------- "Are you sure?" pop-up ---------- */
+.confirm-modal {
+  background: var(--mandi-cream-light);
+  border: 1px solid var(--mandi-line);
+  border-top: 6px solid var(--mandi-terracotta);
+  border-radius: var(--radius);
+}
+.confirm-modal .modal-header,
+.confirm-modal .modal-footer { border-color: var(--mandi-line); }
+.confirm-modal .modal-title { font-family: var(--font-display); color: var(--mandi-brown); }
+.btn-confirm {
+  --bs-btn-color: #FFFFFF;
+  --bs-btn-bg: var(--mandi-terracotta);
+  --bs-btn-border-color: var(--mandi-terracotta);
+  --bs-btn-hover-color: #FFFFFF;
+  --bs-btn-hover-bg: var(--mandi-terracotta-dark);
+  --bs-btn-hover-border-color: var(--mandi-terracotta-dark);
+  --bs-btn-active-bg: var(--mandi-terracotta-dark);
+  --bs-btn-active-color: #FFFFFF;
 }
