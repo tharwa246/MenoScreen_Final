@@ -2,7 +2,7 @@ using MenoScreen.Models;
 
 namespace MenoScreen.Services;
 
-// Value is what gets saved (always the English text), Label is what the clinician sees
+// Value is what gets saved (always English), Label is what the clinician sees
 public record OptionView(string Value, string Label);
 
 public record QuestionView(int Id, int Number, string BlockKey, string Block,
@@ -21,7 +21,8 @@ public static class TranslationHelper
     public static string Normalize(string? language) =>
         language != null && Languages.ContainsKey(language) ? language : "en";
 
-    // The question must be loaded with its Translations
+    // The question must be loaded with its Translations. A missing or blank
+    // translation falls back to English, so nothing is ever empty on screen.
     public static QuestionView Localize(Question q, string? language)
     {
         var lang = Normalize(language);
@@ -30,14 +31,12 @@ public static class TranslationHelper
         var text = !string.IsNullOrWhiteSpace(t?.Text) ? t!.Text : q.Text;
         var block = !string.IsNullOrWhiteSpace(t?.Block) ? t!.Block : q.Block;
 
-        // Saved answers stay in English, so the clinician summary and the
-        // dashboard never mix languages. Only the label shown on screen changes.
+        // Saved answers stay in English. Only the label shown on screen changes.
         var values = Split(q.Options);
         var labels = Split(t?.Options);
         if (labels.Count != values.Count) labels = values;
 
         var options = values.Select((v, i) => new OptionView(v, labels[i])).ToList();
-
         return new QuestionView(q.Id, q.Number, q.Block, block, text, q.Type, options);
     }
 

@@ -1,11 +1,25 @@
 ﻿@page "{patientId:int}"
 @model MenoScreen.Pages.Screenings.NewModel
+@using MenoScreen.Models
+@using MenoScreen.Services
 @{
     ViewData["Title"] = "New screening";
-    string[] labels = { "Not at all", "A little", "Quite a bit", "Extremely" };
+    var lang = Model.Language;
+    string T(string key) => ContentService.Pick(Model.Texts, "ui." + key);
+    string[] scale = { T("Scale0"), T("Scale1"), T("Scale2"), T("Scale3") };
 }
 
 <h1>Screening for @Model.Patient.FullName</h1>
+
+<p>
+    Language:
+    @foreach (var l in TranslationHelper.Languages)
+    {
+        <a asp-page="New" asp-route-patientId="@Model.Patient.Id" asp-route-lang="@l.Key"
+           class="btn btn-sm @(l.Key == lang ? "btn-primary" : "btn-outline-primary")">@l.Value</a>
+    }
+</p>
+<p class="text-muted">Choose the language before answering. Switching language clears the form.</p>
 
 @if (Model.ErrorMessage != null)
 {
@@ -13,16 +27,13 @@
 }
 
 <form method="post">
-    @foreach (var block in Model.Questions.GroupBy(q => q.Block))
+    @foreach (var block in Model.Questions.GroupBy(q => q.BlockKey))
     {
-        <h3 class="mt-4">@block.Key</h3>
+        <h3 class="mt-4">@block.First().Block</h3>
 
-        @if (block.First().Type == MenoScreen.Models.QuestionType.Scored)
+        @if (block.First().Type == QuestionType.Scored)
         {
-            <p class="text-muted">
-                Say to the patient: "I'd like you to rate how much each symptom has been affecting you:
-                0 means not at all, 1 a little, 2 quite a bit, and 3 extremely."
-            </p>
+            <p class="text-muted">Say to the patient: "@T("ScaleIntro")"</p>
         }
 
         @foreach (var q in block)
@@ -30,17 +41,17 @@
             <div class="mb-3">
                 <label class="form-label fw-bold">@q.Number. @q.Text</label>
 
-                @if (q.Type == MenoScreen.Models.QuestionType.Context)
+                @if (q.Type == QuestionType.Context)
                 {
                     <select name="TextAnswers[@q.Id]" class="form-select">
-                        <option value="">Select...</option>
-                        @foreach (var option in (q.Options ?? "").Split('|'))
+                        <option value="">@T("Select")</option>
+                        @foreach (var option in q.Options)
                         {
-                            <option value="@option" selected="@(Model.TextAnswers.GetValueOrDefault(q.Id) == option)">@option</option>
+                            <option value="@option.Value" selected="@(Model.TextAnswers.GetValueOrDefault(q.Id) == option.Value)">@option.Label</option>
                         }
                     </select>
                 }
-                else if (q.Type == MenoScreen.Models.QuestionType.Scored)
+                else if (q.Type == QuestionType.Scored)
                 {
                     <div>
                         @for (int i = 0; i <= 3; i++)
@@ -49,7 +60,7 @@
                                 <input class="form-check-input" type="radio" id="q@(q.Id)_@i"
                                        name="Answers[@q.Id]" value="@i"
                                        checked="@(Model.Answers.TryGetValue(q.Id, out var picked) && picked == i)" />
-                                <label class="form-check-label" for="q@(q.Id)_@i">@i (@labels[i])</label>
+                                <label class="form-check-label" for="q@(q.Id)_@i">@i (@scale[i])</label>
                             </div>
                         }
                     </div>
@@ -61,13 +72,13 @@
                             <input class="form-check-input" type="radio" id="q@(q.Id)_yes"
                                    name="Answers[@q.Id]" value="1"
                                    checked="@(Model.Answers.TryGetValue(q.Id, out var s1) && s1 == 1)" />
-                            <label class="form-check-label" for="q@(q.Id)_yes">Yes</label>
+                            <label class="form-check-label" for="q@(q.Id)_yes">@T("Yes")</label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" id="q@(q.Id)_no"
                                    name="Answers[@q.Id]" value="0"
                                    checked="@(Model.Answers.TryGetValue(q.Id, out var s0) && s0 == 0)" />
-                            <label class="form-check-label" for="q@(q.Id)_no">No</label>
+                            <label class="form-check-label" for="q@(q.Id)_no">@T("No")</label>
                         </div>
                     </div>
                 }

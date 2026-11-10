@@ -118,9 +118,13 @@ public class DocumentService
     }
 
     // Only needs the screening with its Patient loaded
-    public byte[] BuildPatientHandout(Screening s)
+   // texts = the wording in the patient's language (from ContentService.GetAllAsync)
+    public byte[] BuildPatientHandout(Screening s, IDictionary<string, string> texts)
     {
-        var text = HandoutText.GetValueOrDefault(s.Band, string.Empty);
+        var message = ContentService.Pick(texts, "handout." + s.Band);
+        var hello = ContentService.Pick(texts, "handout.Hello");
+        var nextStep = ContentService.Pick(texts, "handout.NextStep");
+        var scan = ContentService.Pick(texts, "handout.ScanOrVisit");
 
         // QR code pointing at the JoinMandi site (no band or score in the link)
         using var generator = new QRCodeGenerator();
@@ -140,14 +144,16 @@ public class DocumentService
                 {
                     col.Spacing(14);
 
-                    col.Item().Text($"Hello {s.Patient.FullName}").FontSize(16).Bold();
-                    col.Item().Text(text);
+                    col.Item().Text($"{hello}, {s.Patient.FullName}").FontSize(16).Bold();
+                    col.Item().Text(message);
 
-                    col.Item().PaddingTop(10).Text("Your next step").Bold();
-                    col.Item().Text("Scan the code with your phone, or visit:");
+                    col.Item().PaddingTop(10).Text(nextStep).Bold();
+                    col.Item().Text(scan);
                     col.Item().Text(LandingUrl).Bold();
-                    col.Item().Width(140).Height(140).Image(qrPng).FitArea();
+                    col.Item().Width(140).Image(qrPng);
 
+                    // The brand lines are fixed, in all four languages, as written in the brief.
+                    // They are never machine translated.
                     col.Item().PaddingTop(20).Text("Talk to Mandi · Khuluma noMandi · Thetha noMandi · Praat met Mandi")
                         .Italic();
                     col.Item().Text("You are not alone · Awuhleli wedwa · Awukho wedwa · Jy is nie alleen nie")

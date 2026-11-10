@@ -4,7 +4,6 @@ using MenoScreen.Models;
 using MenoScreen.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 
 namespace MenoScreen.Pages.Screenings;
 
@@ -12,21 +11,32 @@ public class NewModel : PageModel
 {
     private readonly ApplicationDbContext _db;
     private readonly ScreeningService _screenings;
+    private readonly ContentService _content;
 
-    public NewModel(ApplicationDbContext db, ScreeningService screenings)
+    public NewModel(ApplicationDbContext db, ScreeningService screenings, ContentService content)
     {
         _db = db;
         _screenings = screenings;
+        _content = content;
     }
 
     public Patient Patient { get; set; } = null!;
-    public List<Question> Questions { get; set; } = new();
+    public List<QuestionView> Questions { get; set; } = new();
+
+    // Optional ?lang=zu in the address. If empty, the patient's preferred language is used.
+    [BindProperty(SupportsGet = true)]
+    public string? Lang { get; set; }
+
+    public string Language { get; set; } = "en";
+
+    // Labels from the database, in the chosen language
+    public Dictionary<string, string> Texts { get; set; } = new();
 
     // QuestionId -> 0-3 (scored) or 0/1 (safety question)
     [BindProperty]
     public Dictionary<int, int> Answers { get; set; } = new();
 
-    // QuestionId -> text (context questions)
+    // QuestionId -> English text of the chosen option (context questions)
     [BindProperty]
     public Dictionary<int, string> TextAnswers { get; set; } = new();
 
@@ -53,7 +63,7 @@ public class NewModel : PageModel
         }
         catch (InvalidOperationException ex)
         {
-            // e.g. a question was left unanswered
+            // e.g. a question was left unanswered (this message is still in English)
             ErrorMessage = ex.Message;
             return Page();
         }
@@ -65,7 +75,13 @@ public class NewModel : PageModel
         if (patient == null) return false;
 
         Patient = patient;
-        Questions = await _screenings.GetActiveQuestionsAsync();
+        Language = TranslationHelper.Normalize(
+            string.IsNullOrWhiteSpace(Lang) ? patient.PreferredLanguage : Lang);
+
+        Texts = await _content.GetAllAsync(Language);
+
+        var questions = await _screenings.GetActiveQuestionsAsync();
+        Questions = questions.Select(q => TranslationHelper.Localize(q, Language)).ToList();
         return true;
     }
 }

@@ -1,5 +1,6 @@
 ﻿@page "{id:int}"
 @model MenoScreen.Pages.Screenings.ResultModel
+@using MenoScreen.Services
 @{
     ViewData["Title"] = "Screening result";
 }
@@ -19,6 +20,16 @@
 
 <div class="alert alert-info">@Model.Message</div>
 
-<a asp-page-handler="ClinicianPdf" asp-route-id="@Model.Screening.Id" class="btn btn-outline-primary">Download clinician summary (PDF)</a>
-<a asp-page-handler="HandoutPdf" asp-route-id="@Model.Screening.Id" class="btn btn-outline-primary">Download patient handout (PDF)</a>
-<a asp-page="/Patients/Index" class="btn btn-primary">Back to patients</a>
+<p>
+    <a asp-page-handler="ClinicianPdf" asp-route-id="@Model.Screening.Id" class="btn btn-outline-primary">Download clinician summary (PDF)</a>
+    <a asp-page-handler="HandoutPdf" asp-route-id="@Model.Screening.Id" class="btn btn-outline-primary">Download patient handout (PDF)</a>
+    <a asp-page="/Patients/Index" class="btn btn-primary">Back to patients</a>
+</p>
+
+<p class="small">
+    Handout in another language:
+    @foreach (var l in TranslationHelper.Languages)
+    {
+        <a asp-page-handler="HandoutPdf" asp-route-id="@Model.Screening.Id" asp-route-lang="@l.Key" class="me-2">@l.Value</a>
+    }
+</p>

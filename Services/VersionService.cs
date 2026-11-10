@@ -55,7 +55,10 @@ public class VersionService
                     Language = t.Language,
                     Block = t.Block,
                     Text = t.Text,
-                    Options = t.Options
+                    Options = t.Options,
+                    IsReviewed = t.IsReviewed,
+                    UpdatedAt = t.UpdatedAt,
+                    UpdatedBy = t.UpdatedBy
                 });
             }
 
@@ -66,6 +69,7 @@ public class VersionService
         await _db.SaveChangesAsync();
         return copy;
     }
+
     // Makes one version active and every other version inactive
     public async Task ActivateAsync(int versionId)
     {

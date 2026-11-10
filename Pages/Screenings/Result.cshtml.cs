@@ -11,21 +11,20 @@ public class ResultModel : PageModel
 {
     private readonly ApplicationDbContext _db;
     private readonly DocumentService _documents;
+    private readonly ContentService _content;
 
-    public ResultModel(ApplicationDbContext db, DocumentService documents)
+    public ResultModel(ApplicationDbContext db, DocumentService documents, ContentService content)
     {
         _db = db;
         _documents = documents;
+        _content = content;
     }
 
     public Screening Screening { get; set; } = null!;
     public string Message { get; set; } = string.Empty;
-
-    // NEW: the maximum raw score, worked out from the questions actually answered
     public int MaxRaw { get; set; }
 
-    // On-screen messages from section 7 of the brief.
-    // Temporary: later these move into the database so the medical team can edit them.
+    // On-screen messages from section 7 of the brief. Clinician-facing, so English only.
     private static readonly Dictionary<string, string> Messages = new()
     {
         ["Unlikely"] = "Her symptom profile does not strongly suggest hormonal change at this time. Reassure her and invite her to return if symptoms persist or worsen.",
@@ -37,7 +36,6 @@ public class ResultModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        // CHANGED: also load the answers and their questions, to count the scored ones
         var screening = await _db.Screenings
             .Include(s => s.Patient)
             .Include(s => s.Answers)
@@ -47,7 +45,7 @@ public class ResultModel : PageModel
         if (screening == null) return NotFound();
 
         Screening = screening;
-        MaxRaw = screening.Answers.Count(a => a.Question.Type == QuestionType.Scored) * 3;   // NEW
+        MaxRaw = screening.Answers.Count(a => a.Question.Type == QuestionType.Scored) * 3;
         Message = Messages.GetValueOrDefault(screening.Band, string.Empty);
         return Page();
     }
@@ -66,7 +64,8 @@ public class ResultModel : PageModel
         return File(bytes, "application/pdf", $"clinician-summary-{id}.pdf");
     }
 
-    public async Task<IActionResult> OnGetHandoutPdfAsync(int id)
+    // lang is optional. Without it, the patient's preferred language is used.
+    public async Task<IActionResult> OnGetHandoutPdfAsync(int id, string? lang)
     {
         var screening = await _db.Screenings
             .Include(s => s.Patient)
@@ -74,7 +73,11 @@ public class ResultModel : PageModel
 
         if (screening == null) return NotFound();
 
-        var bytes = _documents.BuildPatientHandout(screening);
-        return File(bytes, "application/pdf", $"patient-handout-{id}.pdf");
+        var language = TranslationHelper.Normalize(
+            string.IsNullOrWhiteSpace(lang) ? screening.Patient.PreferredLanguage : lang);
+
+        var texts = await _content.GetAllAsync(language);
+        var bytes = _documents.BuildPatientHandout(screening, texts);
+        return File(bytes, "application/pdf", $"patient-handout-{id}-{language}.pdf");
     }
 }

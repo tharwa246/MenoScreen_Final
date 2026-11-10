@@ -31,23 +31,28 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Dashboard", "AdminOnly");
     options.Conventions.AuthorizeFolder("/Doctors", "AdminOnly");
     options.Conventions.AuthorizeFolder("/Appointments", "ClinicianOnly");
+    options.Conventions.AuthorizeFolder("/Translations", "AdminOnly");
 });
 
 
-// lets pages ask for a ScoringService
+// lets pages ask for these services
 builder.Services.AddScoped<ScoringService>();
 builder.Services.AddScoped<ScreeningService>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<VersionService>();
 builder.Services.AddScoped<BookingService>();
+builder.Services.AddScoped<ContentService>();
+builder.Services.AddScoped<TranslationAdminService>();
+// NEW: the Azure translator. The key and region come from user-secrets, never from this file.
+builder.Services.AddHttpClient<AzureTranslatorService>(client =>
+{
+    var endpoint = builder.Configuration["Translator:Endpoint"]
+                   ?? "https://api.cognitive.microsofttranslator.com";
+    client.BaseAddress = new Uri(endpoint.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 var app = builder.Build();
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await SeedData.SeedQuestionsAsync(db);
-    await TranslationSeed.SeedTranslationsAsync(db);   // NEW
-}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -103,11 +108,12 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-//SEEDING BLOCK 2: the 23 questions
+//SEEDING BLOCK 2: the 23 questions and the English interface wording
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await SeedData.SeedQuestionsAsync(db);
+    await ContentSeed.SeedAsync(db);   // English only. Azure fills in the other languages.
 }
 
 app.Run();

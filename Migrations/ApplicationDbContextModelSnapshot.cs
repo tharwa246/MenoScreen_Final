@@ -106,6 +106,45 @@ namespace MenoScreen.Migrations
                     b.ToTable("AvailabilitySlots");
                 });
 
+            modelBuilder.Entity("MenoScreen.Models.ContentText", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsReviewed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key", "Language")
+                        .IsUnique();
+
+                    b.ToTable("ContentTexts");
+                });
+
             modelBuilder.Entity("MenoScreen.Models.Doctor", b =>
                 {
                     b.Property<int>("Id")
@@ -246,8 +285,11 @@ namespace MenoScreen.Migrations
 
                     b.Property<string>("Block")
                         .IsRequired()
-                        .HasMaxLength(60)
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsReviewed")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Language")
                         .IsRequired()
@@ -255,7 +297,7 @@ namespace MenoScreen.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Options")
-                        .HasMaxLength(300)
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("QuestionId")
@@ -263,7 +305,14 @@ namespace MenoScreen.Migrations
 
                     b.Property<string>("Text")
                         .IsRequired()
-                        .HasMaxLength(500)
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
