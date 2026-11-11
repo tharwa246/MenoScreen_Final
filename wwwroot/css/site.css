@@ -465,15 +465,6 @@ p { max-width: 70ch; }
 .answer-list li:last-child { border-bottom: 0; }
 .answer-list .val { font-weight: 700; white-space: nowrap; color: var(--mandi-brown); }
 
-/* Assistant */
-.assistant-answer {
-  white-space: pre-line;
-  background: var(--mandi-sand);
-  border-radius: var(--radius);
-  padding: 1rem 1.2rem;
-  margin-top: 1rem;
-}
-.assistant-note { font-size: .85rem; color: var(--mandi-muted); margin-top: .8rem; }
 
 /* ---------- Screening form (clinician and self-screen) ---------- */
 

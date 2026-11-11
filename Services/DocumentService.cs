@@ -60,7 +60,7 @@ public class DocumentService
     {
         if (!Directory.Exists(fontsFolder))
         {
-            Console.WriteLine($"PDF fonts: folder not found at {fontsFolder}");
+         // No fonts folder: the PDFs fall back to QuestPDF's built-in font
             return;
         }
 
@@ -80,7 +80,6 @@ public class DocumentService
                 QuestPDF.Drawing.FontManager.RegisterFontWithCustomName("SourGummy", File.OpenRead(file));
                 DisplayFont = "SourGummy";
             }
-            Console.WriteLine($"PDF fonts: loaded {name}");
         }
     }
 
@@ -459,4 +458,4 @@ public class DocumentService
         }
         return "#D36475";
     }
-}
+}               

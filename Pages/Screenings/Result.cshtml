@@ -81,47 +81,6 @@
 
             <p class="small text-secondary mt-3 mb-0">Raw score @s.RawScore of @(Model.Blocks.Sum(b => b.Max)), converted to @s.MenoLikelihood out of 100.</p>
         </section>
-
-        <section class="panel" aria-labelledby="assistant-title">
-            <h2 id="assistant-title">Ask the clinician assistant</h2>
-            @if (!Model.AssistantAvailable)
-            {
-                <p class="text-secondary mb-0">The assistant isn't switched on for this clinic yet. An admin can turn it on by adding an API key (see SETUP.md).</p>
-            }
-            else
-            {
-                <p class="text-secondary">Answers come only from the clinic's approved guidelines and this result. It doesn't diagnose or prescribe, and it never sees her name.</p>
-
-                <form method="post" asp-page-handler="Ask" asp-route-id="@s.Id">
-                    <div class="d-flex flex-wrap gap-2 mb-2">
-                        @foreach (var suggestion in Model.SuggestedQuestions)
-                        {
-                            <button type="submit" name="AssistantQuestion" value="@suggestion" class="btn btn-sm btn-quiet">@suggestion</button>
-                        }
-                    </div>
-                    <label for="assistantQuestion" class="form-label">Or ask your own question</label>
-                    <div class="d-flex gap-2">
-                        <input id="assistantQuestion" name="CustomQuestion" class="form-control" maxlength="1000" autocomplete="off" />
-                        <button type="submit" class="btn btn-primary">Ask</button>
-                    </div>
-                </form>
-
-                @if (Model.AssistantReply != null)
-                {
-                    @if (Model.AssistantReply.Ok)
-                    {
-                        <div class="assistant-answer" aria-live="polite">
-                            <p class="fw-bold mb-1">@Model.AssistantQuestion</p>@Model.AssistantReply.Text
-                        </div>
-                        <p class="assistant-note">Generated from the clinic guidelines. Check it against your own clinical judgement.</p>
-                    }
-                    else
-                    {
-                        <div class="alert alert-warning mt-3" role="status">@Model.AssistantReply.Text</div>
-                    }
-                }
-            }
-        </section>
     </div>
 
     <div class="col-lg-4">

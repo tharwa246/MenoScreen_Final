@@ -10,19 +10,16 @@ public class ResultModel : PageModel
     private readonly ScreeningService _screenings;
     private readonly DocumentService _documents;
     private readonly AuditService _audit;
-    private readonly ClinicianAssistantService _assistant;
     private readonly ClinicScopeService _scope;
-      private readonly PortalService _portal;
+    private readonly PortalService _portal;
     private readonly ContentService _content;
 
     public ResultModel(ScreeningService screenings, DocumentService documents, AuditService audit,
-                       ClinicianAssistantService assistant, ClinicScopeService scope, PortalService portal,
-                       ContentService content)
+                       ClinicScopeService scope, PortalService portal, ContentService content)
     {
         _screenings = screenings;
         _documents = documents;
         _audit = audit;
-        _assistant = assistant;
         _scope = scope;
         _portal = portal;
         _content = content;
@@ -37,42 +34,11 @@ public class ResultModel : PageModel
     public List<IGrouping<string, Answer>> PatchRows { get; set; } = new();
     public List<Answer> ContextAnswers { get; set; } = new();
 
-    public bool AssistantAvailable => _assistant.IsConfigured;
-
-    // A suggestion button posts AssistantQuestion; the free-text box posts CustomQuestion
-    [BindProperty]
-    public string? AssistantQuestion { get; set; }
-    [BindProperty]
-    public string? CustomQuestion { get; set; }
-    public AssistantReply? AssistantReply { get; set; }
-
-        // The one-tap suggested questions for the assistant (AssistantPrompts table)
-    public List<string> SuggestedQuestions { get; set; } = new();
     public async Task<IActionResult> OnGetAsync(int id)
     {
         if (!await LoadAsync(id)) return NotFound();
         // Every view of a result is written to the audit log (POPIA)
         await _audit.LogAsync("ViewResult", "Screening", id);
-        return Page();
-    }
-
-    // AI clinician assistant
-    public async Task<IActionResult> OnPostAskAsync(int id, CancellationToken ct)
-    {
-        if (!await LoadAsync(id)) return NotFound();
-
-        if (string.IsNullOrWhiteSpace(AssistantQuestion))
-            AssistantQuestion = CustomQuestion;
-
-        if (string.IsNullOrWhiteSpace(AssistantQuestion))
-        {
-            AssistantReply = new AssistantReply(false, "Type a question, or tap one of the suggestions.");
-            return Page();
-        }
-
-        AssistantReply = await _assistant.AskAsync(Screening, AssistantQuestion, ct);
-        // The question text isn't logged: it may contain clinical detail
-        await _audit.LogAsync("AskAssistant", "Screening", id, AssistantReply.Ok ? "Answered" : "Not answered");
         return Page();
     }
 
@@ -148,7 +114,6 @@ public class ResultModel : PageModel
 
         Screening = screening;
         Message = (await _content.GetBandAsync(screening.Band)).ClinicianMessage;
-        SuggestedQuestions = await _content.GetPromptsAsync();
         Blocks = ScoringService.BlockBreakdown(screening.Answers);
 
         PatchRows = screening.Answers

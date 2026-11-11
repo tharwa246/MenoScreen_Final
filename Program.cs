@@ -99,15 +99,6 @@ builder.Services.AddHttpClient<AzureTranslatorService>(client =>
     client.BaseAddress = new Uri(endpoint.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
-// AI clinician assistant: the provider's address, model and key all come from
-// user-secrets (see SETUP.md), so none of them are stored in the code or in git.
-builder.Services.AddHttpClient<ClinicianAssistantService>(client =>
-{
-    var baseUrl = builder.Configuration["Assistant:BaseUrl"];
-    if (!string.IsNullOrWhiteSpace(baseUrl))
-        client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
-    client.Timeout = TimeSpan.FromSeconds(60);
-});
 
 var app = builder.Build();
 
