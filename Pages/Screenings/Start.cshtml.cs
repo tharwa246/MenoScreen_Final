@@ -37,6 +37,12 @@ public class StartModel : PageModel
 
     public string? ExistingError { get; set; }
 
+    // "qr" when the clinician came from "Send a QR self-screening" on the home page:
+    // after adding or choosing her, we go to her QR code instead of the questions.
+    [BindProperty(SupportsGet = true)]
+    public string? Mode { get; set; }
+    public bool IsQr => Mode == "qr";
+
     public class NewPatientInput
     {
         [Required(ErrorMessage = "Enter her full name."), MaxLength(100)]
@@ -94,7 +100,7 @@ public class StartModel : PageModel
         await _db.SaveChangesAsync();
         await _audit.LogAsync("CreatePatient", "Patient", patient.Id, "Consent recorded");
 
-        return RedirectToPage("/Screenings/New", new { patientId = patient.Id });
+        return RedirectToPage(IsQr ? "/Screenings/Invite" : "/Screenings/New", new { patientId = patient.Id });
     }
 
     // Button 2: pick a returning patient and go straight to her screening
@@ -110,7 +116,7 @@ public class StartModel : PageModel
             return Page();
         }
 
-        return RedirectToPage("/Screenings/New", new { patientId = patient.Id });
+        return RedirectToPage(IsQr ? "/Screenings/Invite" : "/Screenings/New", new { patientId = patient.Id });
     }
 
     private async Task LoadAsync()

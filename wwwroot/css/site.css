@@ -796,3 +796,30 @@ main { overflow-x: clip; }
   --bs-btn-active-bg: var(--mandi-terracotta-dark);
   --bs-btn-active-color: #FFFFFF;
 }
+
+/* ---------- Admin home: tiles grouped by colour ---------- */
+.admin-group { --group: var(--mandi-orange); margin-top: 2rem; }
+.admin-group .task-grid { margin-top: .75rem; }
+.admin-group-title {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  font-size: 1.2rem;
+  margin: 0;
+  color: var(--mandi-brown);
+}
+.admin-group-title::before {
+  content: "";
+  width: .9rem;
+  height: .9rem;
+  border-radius: 50%;
+  background: var(--group);
+}
+.admin-group .task { border-left: 6px solid var(--group); }
+.admin-group .task:hover { border-color: var(--group); }
+.admin-group .task h3 { font-size: 1.3rem; margin-bottom: .3rem; }
+
+.group-people    { --group: #D36475; }                 /* Mandi rose pink */
+.group-questions { --group: var(--mandi-orange); }     /* Mandi orange */
+.group-content   { --group: var(--mandi-sun); }        /* Mandi sun yellow */
+.group-insight   { --group: var(--mandi-terracotta); } /* Mandi terracotta */

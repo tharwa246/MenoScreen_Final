@@ -1,59 +1,15 @@
 @page
 @model MenoScreen.Pages.Admin.AdminHomeModel
 @{
-    ViewData["Title"] = "Admin";
+    ViewData["Title"] = "Audit log";
 }
 
-<div class="page-head">
-    <div>
-        <h1>Admin</h1>
-        <p>Questions, accounts and the record of who accessed patient information.</p>
-    </div>
-</div>
+<a class="back-link" asp-page="/Index">Back to home</a>
 
-<div class="task-grid mb-4">
-    <a class="task" asp-page="/Questions/Index">
-        <h2>Screening questions</h2>
-        <p>Version @(Model.ActiveVersion?.ToString() ?? "none") is active, with @Model.ActiveQuestionCount questions.</p>
-    </a>
-    <a class="task" asp-page="/Admin/Staff">
-        <h2>Staff accounts</h2>
-        <p>Add, edit or disable sign-ins, and reset passwords.</p>
-    </a>
-    <a class="task" asp-page="/Admin/Patients">
-        <h2>Patients and screenings</h2>
-        <p>Every clinic's records: correct details, move clinic, or delete.</p>
-    </a>
-    <a class="task" asp-page="/Admin/Suggestions">
-        <h2>Portal tips</h2>
-        <p>The self-care ideas patients see on "My health".</p>
-    </a>
-    <a class="task" asp-page="/Admin/ClinicalContent">
-        <h2>Clinical content</h2>
-        <p>Band wording, assistant guidelines and their sign-off.</p>
-    </a>
-    <a class="task" asp-page="/Versions/Index">
-        <h2>Question versions</h2>
-        <p>Copy a version, edit the draft, then activate it. Used versions are locked.</p>
-    </a>
-    <a class="task" asp-page="/Translations/Index">
-        <h2>Translations</h2>
-        <p>isiZulu, isiXhosa and Afrikaans: Azure drafts, then review by a fluent speaker.</p>
-    </a>
-    <a class="task" asp-page="/Admin/AddClinics">
-        <h2>Clinics</h2>
-        <p>Add, rename or remove clinics.</p>
-    </a>
-    <a class="task" asp-page="/Analytics/Index">
-        <h2>Clinic analytics</h2>
-        <p>Bands, symptom patterns and weekly volume.</p>
-    </a>
-</div>
-
-<section aria-labelledby="audit-title">
+<section aria-labelledby="audit-title" class="pt-3">
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-2">
         <div>
-            <h2 id="audit-title" class="mb-0">Audit log</h2>
+            <h1 id="audit-title" class="mb-0">Audit log</h1>
             <p class="text-secondary mb-0">The newest 200 entries. Required for POPIA accountability; entries can't be edited.</p>
         </div>
         <form method="get" class="d-flex gap-2">

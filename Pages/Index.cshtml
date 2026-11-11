@@ -31,43 +31,97 @@
 }
 else
 {
-<section class="pt-4">
+    <section class="pt-4">
         <h1>
             Welcome back.
             <span class="welcome-clinic">@(isAdmin ? "All clinics" : clinicName ?? "No clinic assigned yet")</span>
         </h1>
         <p class="lead-quiet">What would you like to do?</p>
 
-        <div class="task-grid">
-            @if (isClinician)
-            {
+        @if (isClinician)
+        {
+            <div class="task-grid">
                 <a class="task" asp-page="/Screenings/Start">
                     <h2>Screen a patient</h2>
                     <p>Find or add a patient, then run the screening with her.</p>
                 </a>
-                <a class="task" asp-page="/Screenings/Start">
+                <a class="task" asp-page="/Screenings/Start" asp-route-mode="qr">
                     <h2>Send a QR self-screening</h2>
                     <p>Let her answer on her own phone in the waiting room.</p>
                 </a>
-            }
-            @if (isClinician || isAdmin)
-            {
                 <a class="task" asp-page="/Analytics/Index">
                     <h2>See clinic analytics</h2>
                     <p>Triage bands, weekly volume and the most common symptoms.</p>
                 </a>
-            }
-            @if (isAdmin)
-            {
-                <a class="task" asp-page="/Questions/Index">
-                    <h2>Manage questions</h2>
-                    <p>Review the 23 screening questions and their versions.</p>
-                </a>
-                <a class="task" asp-page="/Admin/AdminHome">
-                    <h2>Audit log</h2>
-                    <p>See who viewed or exported patient information.</p>
-                </a>
-            }
-        </div>
-</section>
+            </div>
+        }
+
+        @if (isAdmin)
+        {
+            @* Admin tiles in colour-coded groups, so related jobs sit together *@
+            <section class="admin-group group-people" aria-labelledby="g-people">
+                <h2 id="g-people" class="admin-group-title">People and clinics</h2>
+                <div class="task-grid">
+                    <a class="task" asp-page="/Admin/Staff">
+                        <h3>Staff accounts</h3>
+                        <p>Add, edit or disable sign-ins, and reset passwords.</p>
+                    </a>
+                    <a class="task" asp-page="/Admin/AddClinics">
+                        <h3>Clinics</h3>
+                        <p>Add, rename or remove clinics.</p>
+                    </a>
+                    <a class="task" asp-page="/Admin/Patients">
+                        <h3>Patients and screenings</h3>
+                        <p>Every clinic's records: correct details, move clinic, or delete.</p>
+                    </a>
+                </div>
+            </section>
+
+            <section class="admin-group group-questions" aria-labelledby="g-questions">
+                <h2 id="g-questions" class="admin-group-title">Screening questions</h2>
+                <div class="task-grid">
+                    <a class="task" asp-page="/Questions/Index">
+                        <h3>Questions</h3>
+                        <p>The questions in the active version, and their wording.</p>
+                    </a>
+                    <a class="task" asp-page="/Versions/Index">
+                        <h3>Question versions</h3>
+                        <p>Copy a version, edit the draft, then activate it. Used versions are locked.</p>
+                    </a>
+                    <a class="task" asp-page="/Translations/Index">
+                        <h3>Translations</h3>
+                        <p>isiZulu, isiXhosa and Afrikaans: Azure drafts, then review by a fluent speaker.</p>
+                    </a>
+                </div>
+            </section>
+
+            <section class="admin-group group-content" aria-labelledby="g-content">
+                <h2 id="g-content" class="admin-group-title">What patients read</h2>
+                <div class="task-grid">
+                    <a class="task" asp-page="/Admin/ClinicalContent">
+                        <h3>Clinical content</h3>
+                        <p>Band wording and guidelines, and their sign-off.</p>
+                    </a>
+                    <a class="task" asp-page="/Admin/Suggestions">
+                        <h3>Portal tips</h3>
+                        <p>The self-care ideas patients see on "My health".</p>
+                    </a>
+                </div>
+            </section>
+
+            <section class="admin-group group-insight" aria-labelledby="g-insight">
+                <h2 id="g-insight" class="admin-group-title">Insight and accountability</h2>
+                <div class="task-grid">
+                    <a class="task" asp-page="/Analytics/Index">
+                        <h3>Clinic analytics</h3>
+                        <p>Bands, symptom patterns and weekly volume, per clinic or all.</p>
+                    </a>
+                    <a class="task" asp-page="/Admin/AdminHome">
+                        <h3>Audit log</h3>
+                        <p>Who viewed, exported or changed patient information.</p>
+                    </a>
+                </div>
+            </section>
+        }
+    </section>
 }

@@ -1,18 +1,19 @@
 @page
 @model MenoScreen.Pages.Screenings.StartModel
 @{
-    ViewData["Title"] = "Start a screening";
+    ViewData["Title"] = Model.IsQr ? "QR self-screening" : "Start a screening";
 }
 
 <div class="page-head">
     <div>
-        <h1>Start a screening</h1>
-        <p>Add her details, or choose her if she's been here before. The questions open straight away.</p>
+        <h1>@(Model.IsQr ? "Send a QR self-screening" : "Start a screening")</h1>
+        <p>@(Model.IsQr ? "Add her details, or choose her if she's been here before. Next you'll get a QR code for her phone." : "Add her details, or choose her if she's been here before. The questions open straight away.")</p>
     </div>
 </div>
 
 <div class="start-grid">
-    <form method="post" asp-page-handler="New" class="panel" novalidate>
+        <form method="post" asp-page-handler="New" class="panel" novalidate>
+        <input type="hidden" asp-for="Mode" />
         <h2>New patient</h2>
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -48,10 +49,11 @@
             </p>
         </fieldset>
 
-        <button type="submit" class="btn btn-primary btn-lg w-100">Start her screening</button>
+            <button type="submit" class="btn btn-primary btn-lg w-100">@(Model.IsQr ? "Create her QR code" : "Start her screening")</button>
     </form>
 
-    <form method="post" asp-page-handler="Existing" class="panel">
+        <form method="post" asp-page-handler="Existing" class="panel">
+        <input type="hidden" asp-for="Mode" />
         <h2>Returning patient</h2>
 
         @if (!Model.ReturningPatients.Any())
@@ -74,7 +76,7 @@
                     <span class="text-danger small">@Model.ExistingError</span>
                 }
             </div>
-            <button type="submit" class="btn btn-primary btn-lg w-100">Start her screening</button>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">@(Model.IsQr ? "Create her QR code" : "Start her screening")</button>
         }
 
         @if (Model.PatientsWithoutConsent > 0)
