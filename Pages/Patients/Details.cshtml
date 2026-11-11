@@ -118,13 +118,16 @@ else
 }
 else
 {
-    var contact = Model.CheckIns.FirstOrDefault(c => c.WantsContact);
-    @if (contact != null)
+        @if (Model.OpenContactRequest != null)
     {
-        <div class="alert alert-warning mt-2" role="alert">
-            <strong>She asked to be contacted</strong> in her check-in on @contact.CheckedInAt.ToString("d MMM yyyy").
+        <div class="alert alert-warning mt-2 d-flex flex-wrap justify-content-between align-items-center gap-2" role="alert">
+            <span><strong>She asked to be contacted</strong> in her check-in on @Model.OpenContactRequest.CheckedInAt.ToString("d MMM yyyy").</span>
+            <form method="post" asp-page-handler="ContactHandled" asp-route-id="@Model.Patient.Id" class="m-0">
+                <button type="submit" class="btn btn-sm btn-quiet">Mark as contacted</button>
+            </form>
         </div>
     }
+    
     <p class="small text-secondary mt-2">0 = no problem, 10 = as bad as it gets. Newest first.</p>
     <div class="table-panel">
         <table class="table">

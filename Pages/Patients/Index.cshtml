@@ -37,6 +37,13 @@
 }
 else
 {
+        @if (Model.WantsContact.Any())
+    {
+        <div class="alert alert-warning" role="status">
+            <strong>@Model.WantsContact.Count @(Model.WantsContact.Count == 1 ? "patient has" : "patients have")</strong> asked to be contacted. They're at the top of the list.
+        </div>
+    }
+    
     <div class="table-panel">
         <table class="table">
             <thead>
@@ -57,6 +64,10 @@ else
                             @if (!p.ConsentGiven)
                             {
                                 <div><span class="tag tag-warn">Consent not recorded</span></div>
+                            }
+                                                        @if (Model.WantsContact.Contains(p.Id))
+                            {
+                                <div><span class="tag tag-warn">Asked to be contacted</span></div>
                             }
                         </td>
                         <td>@MenoScreen.Pages.Patients.IndexModel.LanguageName(p.Language)</td>

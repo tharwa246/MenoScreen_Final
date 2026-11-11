@@ -36,6 +36,10 @@ public class DetailsModel : PageModel
     // Her latest weekly check-ins from the portal, newest first
     public List<WeeklyCheckIn> CheckIns { get; set; } = new();
 
+    
+    // Her newest "contact me" check-in that hasn't been marked as contacted (null if none)
+    public WeeklyCheckIn? OpenContactRequest { get; set; }
+
     // A brand-new setup code. TempData shows it ONCE (straight after it's made) and then forgets it.
     [TempData]
     public string? NewSetupCode { get; set; }
@@ -121,6 +125,18 @@ public class DetailsModel : PageModel
         return RedirectToPage(new { id });
     }
 
+        // "Mark as contacted": clears her contact request. It's recorded in the audit log,
+    // which is also how we know it was handled, so no database change was needed.
+    public async Task<IActionResult> OnPostContactHandledAsync(int id)
+    {
+        var patient = await _scope.FindPatientAsync(id);
+        if (patient == null) return NotFound();
+
+        await _audit.LogAsync("ContactHandled", "Patient", id);
+        StatusMessage = "Marked as contacted. The alert will come back if she asks again.";
+        return RedirectToPage(new { id });
+    }
+
     // POPIA "right to deletion": if she asks, we delete her record completely.
     // Deleting the patient also deletes her screenings, answers and QR invites, because
     // the database is set to "cascade" deletes down to every row that belongs to her.
@@ -163,6 +179,16 @@ public class DetailsModel : PageModel
             .OrderByDescending(c => c.CheckedInAt)
             .Take(12)
             .ToListAsync();
+                    // Her newest "contact me" that nobody has marked as handled yet
+        var request = CheckIns.FirstOrDefault(c => c.WantsContact);
+        if (request != null)
+        {
+            var lastHandled = await _db.AuditLogs
+                .Where(a => a.Action == "ContactHandled" && a.EntityType == "Patient" && a.EntityId == id)
+                .MaxAsync(a => (DateTime?)a.At);
+            if (lastHandled == null || lastHandled < request.CheckedInAt)
+                OpenContactRequest = request;
+        }
         History = await _db.Screenings
             .Where(s => s.PatientId == id)
             .OrderByDescending(s => s.ScreenedAt)
